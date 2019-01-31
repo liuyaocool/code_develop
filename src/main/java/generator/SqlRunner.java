@@ -1,19 +1,10 @@
 package generator;
 
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Properties;
+import generator.utils.FileUtil;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
@@ -23,76 +14,42 @@ public class SqlRunner {
 	private String url;
 	private String userid;
 	private String password;
-	private String sourceFile;
+	private String tableName;
+	private String sourceFilePath;
 	private Log log;
 
-	public SqlRunner(String sourceFile, String driver, String url, String userId, String password) throws MojoExecutionException {
-			this.sourceFile = sourceFile;
+	public SqlRunner(String sourceFile, String driver, String url, String userId, String password, String tableName) {
+			this.sourceFilePath = sourceFile;
 			this.driver = driver;
 			this.url = url;
 			this.userid = userId;
 			this.password = password;
+			this.tableName = tableName;
 	}
 
-	public void executeScript() throws MojoExecutionException {
+	public List<String> executeScript() throws MojoExecutionException {
 		Connection connection = null;
-
+		List<String> colums = new ArrayList<>();//保存字段名
 		try {
-//			Class<?> driverClass = ObjectFactory.externalClassForName(this.driver);
-//			Driver theDriver = (Driver)driverClass.newInstance();
-			Properties properties = new Properties();
-			if (this.userid != null) {
-				properties.setProperty("user", this.userid);
+			connection = DriverManager.getConnection(this.url, this.userid, this.password);
+//			connection.setAutoCommit(false);
+			String sql = getSql(this.tableName);
+			PreparedStatement statement = connection.prepareStatement(sql);
+			ResultSet rs = statement.executeQuery(sql);
+			ResultSetMetaData data = rs.getMetaData();
+			//保存查到的字段明
+			for (int i = 1; i < data.getColumnCount(); i++) {
+				colums.add(FileUtil.stringFormat(data.getColumnName(i), false));
+				System.out.println(colums.get(i-1));
 			}
-
-			if (this.password != null) {
-				properties.setProperty("password", this.password);
-			}
-
-//			connection = theDriver.connect(this.url, properties);
-			connection.setAutoCommit(false);
-			Statement statement = connection.createStatement();
-			BufferedReader br = this.getScriptReader();
-
-			String sql;
-			while((sql = this.readStatement(br)) != null) {
-				statement.execute(sql);
-			}
-
 			this.closeStatement(statement);
 			connection.commit();
-			br.close();
-//		} catch (ClassNotFoundException var16) {
-//			throw new MojoExecutionException("Class not found: " + var16.getMessage());
-		} catch (FileNotFoundException var17) {
-			throw new MojoExecutionException("File note found: " + this.sourceFile);
 		} catch (SQLException var18) {
 			throw new MojoExecutionException("SqlException: " + var18.getMessage(), var18);
-		} catch (IOException var19) {
-			throw new MojoExecutionException("IOException: " + var19.getMessage(), var19);
-//		} catch (InstantiationException var20) {
-//			throw new MojoExecutionException("InstantiationException: " + var20.getMessage());
-//		} catch (IllegalAccessException var21) {
-//			throw new MojoExecutionException("IllegalAccessException: " + var21.getMessage());
 		} finally {
 			this.closeConnection(connection);
 		}
-	}
-
-	public String getDriver() {
-		return this.driver;
-	}
-
-	public void setDriver(String driver) {
-		this.driver = driver;
-	}
-
-	public String getPassword() {
-		return this.password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
+		return colums;
 	}
 
 	private void closeConnection(Connection connection) {
@@ -117,56 +74,17 @@ public class SqlRunner {
 
 	}
 
-	private String readStatement(BufferedReader br) throws IOException {
-		StringBuilder sb = new StringBuilder();
-
-		String line;
-		while((line = br.readLine()) != null) {
-//			if (!line.startsWith("--") && StringUtility.stringHasValue(line)) {
-				if (line.endsWith(";")) {
-					sb.append(' ');
-					sb.append(line.substring(0, line.length() - 1));
-					break;
-				}
-
-				sb.append(' ');
-				sb.append(line);
-//			}
-		}
-
-		String s = sb.toString().trim();
-		if (s.length() > 0) {
-//			this.log.debug(Messages.getString("Progress.13", s));
-		}
-
-		return s.length() > 0 ? s : null;
-	}
-
 	public void setLog(Log log) {
 		this.log = log;
 	}
 
-	private BufferedReader getScriptReader() throws MojoExecutionException, IOException {
-		BufferedReader answer;
-		if (this.sourceFile.startsWith("classpath:")) {
-			String resource = this.sourceFile.substring("classpath:".length());
-//			URL url = ObjectFactory.getResource(resource);
-//			InputStream is = url.openStream();
-//			if (is == null) {
-//				throw new MojoExecutionException("SQL script file does not exist: " + resource);
-//			}
-
-//			answer = new BufferedReader(new InputStreamReader(is));
-		} else {
-			File file = new File(this.sourceFile);
-			if (!file.exists()) {
-				throw new MojoExecutionException("SQL script file does not exist");
-			}
-
-			answer = new BufferedReader(new FileReader(file));
+	private String getSql(String tableName){
+		switch (this.driver){
+			case "oracle":
+				return "SELECT b.COLUMN_NAME name,a.COMMENTS description FROM USER_TAB_COLUMNS b,USER_COL_COMMENTS a \n" +
+					"WHERE b.TABLE_NAME = '" + tableName + "' AND b.TABLE_NAME = a.TABLE_NAME AND b.COLUMN_NAME = a.COLUMN_NAME";
+			default: return null;
 		}
-
-//		return answer;
-		return null;
 	}
+
 }

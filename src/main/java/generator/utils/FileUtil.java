@@ -48,6 +48,21 @@ public class FileUtil {
 	}
 
 	/**
+	 * 转换下划线以及大小写
+	 * @param firsCharBig 首字母是否大写
+	 */
+	public static String stringFormat(String str, boolean firsCharBig){
+
+		String[] strs = str.split("_");
+		str = "";
+		for (int i = 0; i < strs.length; i++) {
+			str += strs[i].substring(0, 1).toUpperCase() + strs[i].substring(1).toLowerCase();
+		}
+		if (firsCharBig) return str;
+		return str.substring(0,1).toLowerCase() + str.substring(1);
+	}
+
+	/**
 	 * 目录下查找目录
 	 */
 	public static String getFile(String path, String fileName) {
