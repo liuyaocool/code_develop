@@ -39,7 +39,7 @@ public class SqlRunner {
 			ResultSetMetaData data = rs.getMetaData();
 			//保存查到的字段明
 			for (int i = 1; i < data.getColumnCount(); i++) {
-				colums.add(FileUtil.stringFormat(data.getColumnName(i), false));
+				colums.add(FileUtil.getInstance().stringFormat(data.getColumnName(i), false));
 				System.out.println(colums.get(i-1));
 			}
 			this.closeStatement(statement);

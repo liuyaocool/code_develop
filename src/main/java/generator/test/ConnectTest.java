@@ -8,7 +8,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import java.sql.*;
 import java.util.List;
 
-public class Test {
+public class ConnectTest {
 
 	public static void main(String[] args) throws MojoExecutionException {
 
