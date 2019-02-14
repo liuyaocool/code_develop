@@ -1,0 +1,43 @@
+package #servicePkg#;
+
+import java.util.List;
+
+import #entityImport#;
+import #iServiceImport#;
+import #iMapperImport#;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Service;
+
+@Service
+@Primary
+public class #fileName# implements #iServiceName#{
+
+	@Autowired
+	private #iMapperName# baseMapper;
+
+    @Override
+    public int deleteByPrimaryKey(String primaryId){
+        return baseMapper.deleteByPrimaryKey(primaryId);
+    };
+
+    @Override
+    public int insert(#filePrefix# record){
+        return baseMapper.insert(record);
+    };
+
+    @Override
+    public #filePrefix# selectByPrimaryKey(String primaryId){
+        return baseMapper.selectByPrimaryKey(primaryId);
+    };
+
+    @Override
+    public List<#filePrefix#> selectAll(){
+        return baseMapper.selectAll();
+    };
+
+    @Override
+    public int updateByPrimaryKey(#filePrefix# record){
+        return baseMapper.updateByPrimaryKey(record);
+    };
+}

@@ -1,0 +1,17 @@
+package #interPkg#;
+
+import java.util.List;
+import #entityImport#;
+
+public interface #fileName# {
+
+    int deleteByPrimaryKey(String #primaryId#);
+
+    int insert(#filePrefix# record);
+
+    #filePrefix# selectByPrimaryKey(String #primaryId#);
+
+    List<#filePrefix#> selectAll();
+
+    int updateByPrimaryKey(#filePrefix# record);
+}

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="#mapperImport#">
+  <resultMap id="BaseResultMap" type="#filePrefix#">
+    #resultData#
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+    #deleteByPrimaryKey#
+  </delete>
+  <insert id="insert" parameterType="#filePrefix#">
+    #insert#
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="#filePrefix#">
+    #updateByPrimaryKey#
+  </update>
+  <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+    #selectByPrimaryKey#
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap">
+    #selectAll#
+  </select>
+</mapper>

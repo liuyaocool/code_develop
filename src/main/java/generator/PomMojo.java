@@ -1,0 +1,188 @@
+package generator;
+
+import generator.model.ColumnInfo;
+import generator.utils.FileUtil;
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
+
+import java.io.File;
+import java.util.List;
+import java.util.Map;
+
+@Mojo(
+		name = "test",
+		defaultPhase = LifecyclePhase.GENERATE_SOURCES,
+		requiresDependencyResolution = ResolutionScope.TEST
+)
+public class PomMojo extends AbstractMojo{
+
+	private ThreadLocal<ClassLoader> savedClassloader = new ThreadLocal<>();
+
+	//在调用项目pom的plugin中的configuration标签下定义
+	@Parameter(
+			property = "sourcePath",
+			defaultValue = "application.yml",
+			required = true
+	)
+	private String sourcePath;
+	@Parameter(property = "jdbcDriver")
+	private String jdbcDriver;
+	@Parameter(property = "jdbcUrl")
+	private String jdbcUrl;
+	@Parameter(property = "jdbcUsername")
+	private String jdbcUsername;
+	@Parameter(property = "jdbcPwd")
+	private String jdbcPwd;
+	@Parameter(property = "tableName",required = true)
+	private String tableName;
+	@Parameter(property = "encoding",defaultValue = "utf-8")
+	private String encoding;
+	@Parameter(property = "proPkg",required = true)
+	private String proPkg;
+	@Parameter(property = "pkg",required = true)
+	private Map<String,String> pkg;
+	@Parameter(property = "controllerPkg", defaultValue = "controller")
+	private String controllerPkg;
+	@Parameter(property = "servicePkg", defaultValue = "service")
+	private String servicePkg;
+	@Parameter(property = "mapperPkg", defaultValue = "mapper")
+	private String mapperPkg;
+	@Parameter(property = "pojoPkg", defaultValue = "pojo")
+	private String pojoPkg;
+
+	private String javaPath; //java路径
+	private String resourcesPath;// 资源路径
+	private String filePrefix;	//文件前缀名(实体类名)
+	private ColumnInfo primaryInfo;// 主键名
+
+	@Override
+	public void execute() throws MojoExecutionException, MojoFailureException {
+
+		this.filePrefix = FileUtil.getInstance().stringFormat(this.tableName, true);
+		this.javaPath = System.getProperty("user.dir") + "/src/main/java/";
+		this.resourcesPath = System.getProperty("user.dir") + "/src/main/resources/";
+		//包名(aa.bb.**.cc)，将路径中**替换成controller、service 等即可 全局可用
+		String pkgPath = getPkgPath();
+//		System.out.println(pkgPath);
+//		System.out.println("control:" + pkgPath.replace("**", this.controllerPkg));
+//		System.out.println("service:" + pkgPath.replace("**", this.servicePkg));
+//		System.out.println("mapper:" + pkgPath.replace("**", this.mapperPkg));
+//		System.out.println("pojo:" + pkgPath.replace("**", this.pojoPkg));
+
+		SqlRunner sr = new SqlRunner(this.resourcesPath + this.sourcePath,
+				this.jdbcDriver,this.jdbcUrl,this.jdbcUsername,this.jdbcPwd,this.tableName);
+		List<ColumnInfo> columns = sr.executeScript();
+		//创建实体类并返回导包信息
+		String entityImport = createEneity(this.filePrefix,columns, pkgPath.replace("**", this.pojoPkg));
+		//创建mapper接口并返回导包信息
+		String imapperImport = createInter(entityImport,pkgPath.replace("**", this.mapperPkg),"I"+this.filePrefix+"Mapper");
+		//创建mapper接口并返回导包信息
+		String iserviceImport = createInter(entityImport,pkgPath.replace("**", this.servicePkg),"I"+this.filePrefix+"Service");
+		//创建service实现类并返回导包信息
+//		String serviceImport = ;
+
+
+
+
+//		FileUtil.getInstance().copyFile(FileUtil.getInstance().getFile(),
+//				projectPath + "resources\\application-dev.yml");
+
+	}
+
+	//获得包名
+	private String getPkgPath(){
+		String[] pkgRules = this.pkg.get("rule").split("\\.");
+		String pkgPath = this.proPkg;
+		for (int i = 0; i < pkgRules.length; i++) {
+			if ("*".equals(pkgRules[i])){
+				pkgPath += ".**";
+			} else {
+				if (null != this.pkg.get(pkgRules[i]))
+					pkgPath += "." + this.pkg.get(pkgRules[i]);
+			}
+		}
+		return pkgPath;
+	}
+
+	/**
+	 * 创建实体类
+	 * @param filePrefix 文件名
+	 * @param columns 表格字段详情
+	 * @param pkgPath 包名
+	 * @return
+	 */
+	public String createEneity(String filePrefix, List<ColumnInfo> columns, String pkgPath){
+
+		StringBuffer sb = new StringBuffer("package ").append(pkgPath).append(";\n\n");
+		sb.append("public class ").append(filePrefix).append("{\n");
+		StringBuffer sbGetSet = new StringBuffer();
+		for (int i = 0; i < columns.size(); i++) {
+			if (columns.get(i).getColumnType() == 1) this.primaryInfo = columns.get(i);
+			sb.append("\n\t").append("private ").append(columns.get(i).getJavaType())
+					.append(" ").append(columns.get(i).getEntityAttr())
+					.append(";//").append(columns.get(i).getColumnDescription());
+			sbGetSet.append(columns.get(i).getGetterMethod()).append(columns.get(i).getSetterMethod());
+		}
+		sb.append("\n\n\tpublic ").append(filePrefix).append(" (){}\n");
+		sb.append(sbGetSet).append("\n}");
+
+		FileUtil.getInstance().createFile(
+				this.javaPath + pkgPath.replace(".", "/"),
+				filePrefix + ".java",
+				sb.toString());
+		return pkgPath + "." + filePrefix;
+	}
+
+	/**
+	 * 创建接口
+	 * @param entityImport 实体类导包路径
+	 * @return
+	 */
+	private String createInter(String entityImport,String pkgPath,String fileName){
+
+		String content = FileUtil.getInstance().getInsideFile("/model/InterFace.txt");
+		content = content.replace("#filePrefix#", this.filePrefix);
+		content = content.replace("#entityImport#", entityImport);
+		content = content.replace("#primaryId#", this.primaryInfo.getEntityAttr());
+		content = content.replace("#interPkg#", pkgPath);
+		content = content.replace("#fileName#", fileName);
+
+		FileUtil.getInstance().createFile(
+				this.javaPath + pkgPath.replace(".", "/"),
+				fileName + ".java",
+				content);
+		return pkgPath + "." + filePrefix;
+	}
+
+	private String createServiceImpl(String entityImport, String iServiceImport, String iMapperImport, String pkgPath,String fileName){
+		String content = FileUtil.getInstance().getInsideFile("/model/serviceImpl.txt");
+		content = content.replace("#servicePkg#", pkgPath);
+		content = content.replace("#entityImport#", entityImport);
+		content = content.replace("#iServiceImport#", iServiceImport);
+		content = content.replace("#iMapperImport#", iMapperImport);
+		content = content.replace("#fileName#", fileName);
+		content = content.replace("#iServiceName#", getNameFromImport(iServiceImport));
+		content = content.replace("#iMapperName#", getNameFromImport(iMapperImport));
+		content = content.replace("#filePrefix#", this.filePrefix);
+		FileUtil.getInstance().createFile(
+				this.javaPath + pkgPath.replace(".", "/"),
+				fileName + ".java",
+				content);
+		return pkgPath + "." + filePrefix;
+	}
+
+
+	/**
+	 * 从导包路径中获得文件名（无后缀）
+	 * @param fileImport
+	 * @return
+	 */
+	private String getNameFromImport(String fileImport){
+		return fileImport.substring(fileImport.lastIndexOf("."));
+	}
+}

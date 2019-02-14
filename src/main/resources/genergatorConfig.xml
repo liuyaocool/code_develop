@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+        http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd ">
+
+    <context:property-placeholder location="classpath:jdbc.properties"/>
+
+
+    <!--spring-boot项目配置-->
+    <genergatorConfig>
+        <!-- 引入配置文件 读取resources下文件 必需-->
+        <properties>application.yml</properties>
+
+        <!--小模块名称 会在js、service等包下创建此包名，
+            在此包名下创建源码文件（js/system/xxx.js）
+            空则直接创建（js/xxx.js） -->
+        <modelName></modelName>
+        <!-- 生成代码的位置 如‘java/controller/system、resources/jsp/system’
+            若为空 则默认查找项目中对应的包直接创建 created:是否需要创建 -->
+        <entityPath created="true"></entityPath>
+        <servicePath created="true"></servicePath>
+        <controllerPath created="true"></controllerPath>
+        <mapperPath created="true"></mapperPath>
+        <jsPath created="true"></jsPath>
+        <jspPath created="true"></jspPath>
+        <cssPath created="true"></cssPath>
+        <tables>
+            <table_name></table_name>
+        </tables>
+
+        <!-- 编码方式 默认utf-8 -->
+        <fileEncoding>utf-8</fileEncoding>
+
+        <!--若不是spring-boot项目 系配置以下数据-->
+        <jdbcConfig>
+
+        </jdbcConfig>
+
+    </genergatorConfig>
+
+</beans>

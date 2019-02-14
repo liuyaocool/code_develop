@@ -1,12 +1,13 @@
 package generator;
 
+import java.io.*;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import generator.utils.FileUtil;
+import generator.model.ColumnInfo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
+import org.ho.yaml.Yaml;
 
 public class SqlRunner {
 
@@ -15,11 +16,48 @@ public class SqlRunner {
 	private String userid;
 	private String password;
 	private String tableName;
-	private String sourceFilePath;
 	private Log log;
 
-	public SqlRunner(String sourceFile, String driver, String url, String userId, String password, String tableName) {
-			this.sourceFilePath = sourceFile;
+	public SqlRunner(String sourcePath, String driver, String url, String userId, String password, String tableName){
+		if (sourcePath.endsWith(".yml")){
+			Map<String, Map<String,Map<String,String>>> ymlMap = null;
+			try {
+				ymlMap = Yaml.loadType(new File(sourcePath) , HashMap.class);
+				Map<String, String> jdbcMap = ymlMap.get("spring").get("datasource");
+				this.driver = jdbcMap.get("driver-class-name");
+				this.url = jdbcMap.get("url");
+				this.userid = jdbcMap.get("username");
+				this.password = jdbcMap.get("password");
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+//			System.out.println("yml:"+this.driver+this.userid+this.password+this.url);
+		} else {
+			FileInputStream fis = null;
+			try {
+				fis = new FileInputStream(sourcePath);
+				Properties p = new Properties();
+				p.load(new FileInputStream(sourcePath));
+				this.driver = p.getProperty(driver);
+				this.url = p.getProperty(url);
+				this.userid = p.getProperty(userId);
+				this.password = p.getProperty(password);
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				try {
+					if (null != fis) fis.close();
+				} catch (IOException e) {}
+			}
+
+		}
+		this.tableName = tableName;
+
+		System.out.println(this.driver+this.url+this.userid+this.password+this.tableName);
+	}
+	public SqlRunner(String driver, String url, String userId, String password, String tableName) {
 			this.driver = driver;
 			this.url = url;
 			this.userid = userId;
@@ -27,29 +65,37 @@ public class SqlRunner {
 			this.tableName = tableName;
 	}
 
-	public List<String> executeScript() throws MojoExecutionException {
+	public List<ColumnInfo> executeScript() throws MojoExecutionException {
 		Connection connection = null;
-		List<String> colums = new ArrayList<>();//保存字段名
+		PreparedStatement statement = null;
+		List<ColumnInfo> datas = new ArrayList<>();//保存字段名
 		try {
 			connection = DriverManager.getConnection(this.url, this.userid, this.password);
 //			connection.setAutoCommit(false);
-			String sql = getSql(this.tableName);
-			PreparedStatement statement = connection.prepareStatement(sql);
+			String sql = getSql();
+			statement = connection.prepareStatement(sql);
 			ResultSet rs = statement.executeQuery(sql);
-			ResultSetMetaData data = rs.getMetaData();
-			//保存查到的字段明
-			for (int i = 1; i < data.getColumnCount(); i++) {
-				colums.add(FileUtil.getInstance().stringFormat(data.getColumnName(i), false));
-				System.out.println(colums.get(i-1));
+			while (rs.next()){
+				ColumnInfo tableInfo = new ColumnInfo(
+						rs.getString("name"),
+						rs.getString("description"),
+						rs.getString("datatype"));
+				String pri = rs.getString("pri");
+				tableInfo.setColumnType(0);
+				if (null != pri && !"".equals(pri)){
+					tableInfo.setColumnType(1);
+				}
+				datas.add(tableInfo);
+//				System.out.println(tableInfo.getJdbcType() + tableInfo.getColumnName() + tableInfo.getColumnDescription() + tableInfo.getColumnType());
 			}
-			this.closeStatement(statement);
-			connection.commit();
+//			connection.commit();
 		} catch (SQLException var18) {
 			throw new MojoExecutionException("SqlException: " + var18.getMessage(), var18);
 		} finally {
+			this.closeStatement(statement);
 			this.closeConnection(connection);
 		}
-		return colums;
+		return datas;
 	}
 
 	private void closeConnection(Connection connection) {
@@ -74,16 +120,26 @@ public class SqlRunner {
 
 	}
 
-	public void setLog(Log log) {
-		this.log = log;
-	}
-
-	private String getSql(String tableName){
-		switch (this.driver){
-			case "oracle":
-				return "SELECT b.COLUMN_NAME name,a.COMMENTS description FROM USER_TAB_COLUMNS b,USER_COL_COMMENTS a \n" +
-					"WHERE b.TABLE_NAME = '" + tableName + "' AND b.TABLE_NAME = a.TABLE_NAME AND b.COLUMN_NAME = a.COLUMN_NAME";
-			default: return null;
+	private String getSql(){
+		if (this.driver.contains("oracle")){
+			return "SELECT B.COLUMN_NAME NAME,A.COMMENTS DESCRIPTION,CU.COLUMN_NAME PRI, replace(B.DATA_TYPE,'VARCHAR2','VARCHAR') DATATYPE \n" +
+					"FROM USER_TAB_COLUMNS B \n" +
+					"LEFT JOIN USER_COL_COMMENTS A ON B.TABLE_NAME = A.TABLE_NAME AND B.COLUMN_NAME = A.COLUMN_NAME \n" +
+					"LEFT JOIN (SELECT CU.TABLE_NAME,CU.COLUMN_NAME FROM USER_CONS_COLUMNS CU,USER_CONSTRAINTS AU \n" +
+					"WHERE CU.CONSTRAINT_NAME = AU.CONSTRAINT_NAME AND AU.CONSTRAINT_TYPE = 'P') CU " +
+					"ON CU.TABLE_NAME = B.TABLE_NAME AND B.COLUMN_NAME = CU.COLUMN_NAME \n" +
+					"WHERE B.TABLE_NAME = '" + this.tableName + "' ORDER BY B.COLUMN_ID ASC";
+		} else if (this.driver.contains("mysql")){
+			return "SELECT COLUMN_NAME NAME, COLUMN_COMMENT DESCRIPTION, COLUMN_KEY PRI, DATA_TYPE DATATYPE \n" +
+					" FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '" + this.tableName + " ORDER BY ORDINAL_POSITION ASC";
+		} else if (this.driver.contains("sqlserver")){ //缺少datatype
+			return "SELECT B.NAME, C.VALUE AS DESCRIPTION, E.COLUMN_NAME PRI  FROM\n" +
+					"SYS.TABLES A INNER JOIN SYS.COLUMNS B ON B.OBJECT_ID = A.OBJECT_ID LEFT JOIN SYS.EXTENDED_PROPERTIES C ON C.MAJOR_ID = B.OBJECT_ID \n" +
+					"AND C.MINOR_ID = B.COLUMN_ID LEFT JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS D ON A.NAME = D.TABLE_NAME \n" +
+					"AND D.CONSTRAINT_TYPE = 'PRIMARY KEY' LEFT JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE E ON D.CONSTRAINT_NAME = E.CONSTRAINT_NAME \n" +
+					"AND B.NAME = E.COLUMN_NAME WHERE A.NAME = '" + this.tableName + "' ORDER BY B.COLUMN_ID ASC";
+		} else {
+			return null;
 		}
 	}
 

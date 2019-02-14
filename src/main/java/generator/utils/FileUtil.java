@@ -7,32 +7,39 @@ import java.nio.channels.FileChannel;
 
 public class FileUtil {
 
-	public static FileUtil fileUtil;
+	private static FileUtil fileUtil;
 	public static synchronized FileUtil getInstance(){
 		if (null == fileUtil) fileUtil = new FileUtil();
 		return fileUtil;
 	}
 	private FileUtil(){}
 
-	public File getInsideFile(){
+	public String getInsideFile(String filePath){
 
+		BufferedReader bf = null;
+		InputStreamReader inReader = null;
+		InputStream in = null;
+		StringBuffer content = new StringBuffer();
 		try {
-			InputStream in = this.getClass().getResourceAsStream("/model/Controller.txt");
-			InputStreamReader inReader = new InputStreamReader(in);
-			BufferedReader bf = new BufferedReader(inReader);
+			in = this.getClass().getResourceAsStream(filePath);
+			inReader = new InputStreamReader(in);
+			bf = new BufferedReader(inReader);
 			String str;
 			while ((str = bf.readLine()) != null) {
-				System.out.println(str);
+				content.append(str).append("\n");
 			}
-			bf.close();
-			inReader.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
-
+			try {
+				if (null != bf) bf.close();
+				if (null != inReader) inReader.close();
+				if (null != in) in.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
-
-		return null;
+		return content.toString();
 	}
 
 	public File getFile(){
@@ -71,7 +78,7 @@ public class FileUtil {
 			targetFile.mkdirs();
 		}
 		try {
-			BufferedWriter bw = new BufferedWriter(new FileWriter(filePath + fileName));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(filePath + "/" + fileName));
 			bw.write(content);
 			bw.close();
 			System.out.println(filePath + "\\" + fileName);
@@ -206,4 +213,8 @@ public class FileUtil {
 		}
 		return ifSuccess;
 	}
+
+//	public
+
+
 }
