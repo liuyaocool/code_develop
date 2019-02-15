@@ -11,6 +11,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -68,7 +69,7 @@ public class PomMojo extends AbstractMojo{
 		this.resourcesPath = System.getProperty("user.dir") + "/src/main/resources/";
 		//包名(aa.bb.**.cc)，将路径中**替换成controller、service 等即可 全局可用
 		String pkgPath = getPkgPath();
-//		System.out.println(pkgPath);
+		System.out.println(pkgPath);
 //		System.out.println("control:" + pkgPath.replace("**", this.controllerPkg));
 //		System.out.println("service:" + pkgPath.replace("**", this.servicePkg));
 //		System.out.println("mapper:" + pkgPath.replace("**", this.mapperPkg));
@@ -77,15 +78,25 @@ public class PomMojo extends AbstractMojo{
 		SqlRunner sr = new SqlRunner(this.resourcesPath + this.sourcePath,
 				this.jdbcDriver,this.jdbcUrl,this.jdbcUsername,this.jdbcPwd,this.tableName);
 		List<ColumnInfo> columns = sr.executeScript();
-		//创建实体类并返回导包信息
-		String entityImport = createEneity(this.filePrefix,columns, pkgPath.replace("**", this.pojoPkg));
-		//创建mapper接口并返回导包信息
-		String imapperImport = createInter(entityImport,pkgPath.replace("**", this.mapperPkg),"I"+this.filePrefix+"Mapper");
-		//创建mapper接口并返回导包信息
-		String iserviceImport = createInter(entityImport,pkgPath.replace("**", this.servicePkg),"I"+this.filePrefix+"Service");
-		//创建service实现类并返回导包信息
-//		String serviceImport = ;
 
+		try {
+			//创建实体类并返回导包信息
+			String entityImport = createEneity(this.filePrefix,columns, pkgPath.replace("**", this.pojoPkg));
+			//创建mapper接口并返回导包信息
+			String imapperImport = createInter(entityImport,pkgPath.replace("**", this.mapperPkg),"I"+this.filePrefix+"Mapper");
+			//创建mapper.xml
+			String mapperXmlPath = createMapperXml(columns,entityImport,imapperImport,
+					pkgPath.replace("**","").replace(this.proPkg,""),this.filePrefix+"Mapper");
+			//创建mapper接口并返回导包信息
+			String iserviceImport = createInter(entityImport,pkgPath.replace("**", this.servicePkg),"I"+this.filePrefix+"Service");
+			//创建service实现类并返回导包信息
+			String serviceImport = createServiceImpl(entityImport, iserviceImport, imapperImport,
+					pkgPath.replace("**", this.servicePkg) + ".impl",this.filePrefix+"Service");
+
+		} catch (IOException e){
+//			e.printStackTrace();
+			System.out.println(e.toString());
+		}
 
 
 
@@ -116,7 +127,7 @@ public class PomMojo extends AbstractMojo{
 	 * @param pkgPath 包名
 	 * @return
 	 */
-	public String createEneity(String filePrefix, List<ColumnInfo> columns, String pkgPath){
+	public String createEneity(String filePrefix, List<ColumnInfo> columns, String pkgPath) throws IOException {
 
 		StringBuffer sb = new StringBuffer("package ").append(pkgPath).append(";\n\n");
 		sb.append("public class ").append(filePrefix).append("{\n");
@@ -134,7 +145,7 @@ public class PomMojo extends AbstractMojo{
 		FileUtil.getInstance().createFile(
 				this.javaPath + pkgPath.replace(".", "/"),
 				filePrefix + ".java",
-				sb.toString());
+				sb.toString(), this.encoding);
 		return pkgPath + "." + filePrefix;
 	}
 
@@ -143,7 +154,7 @@ public class PomMojo extends AbstractMojo{
 	 * @param entityImport 实体类导包路径
 	 * @return
 	 */
-	private String createInter(String entityImport,String pkgPath,String fileName){
+	private String createInter(String entityImport,String pkgPath,String fileName) throws IOException {
 
 		String content = FileUtil.getInstance().getInsideFile("/model/InterFace.txt");
 		content = content.replace("#filePrefix#", this.filePrefix);
@@ -155,11 +166,11 @@ public class PomMojo extends AbstractMojo{
 		FileUtil.getInstance().createFile(
 				this.javaPath + pkgPath.replace(".", "/"),
 				fileName + ".java",
-				content);
-		return pkgPath + "." + filePrefix;
+				content, this.encoding);
+		return pkgPath + "." + fileName;
 	}
 
-	private String createServiceImpl(String entityImport, String iServiceImport, String iMapperImport, String pkgPath,String fileName){
+	private String createServiceImpl(String entityImport, String iServiceImport, String iMapperImport, String pkgPath,String fileName) throws IOException {
 		String content = FileUtil.getInstance().getInsideFile("/model/serviceImpl.txt");
 		content = content.replace("#servicePkg#", pkgPath);
 		content = content.replace("#entityImport#", entityImport);
@@ -171,8 +182,42 @@ public class PomMojo extends AbstractMojo{
 		content = content.replace("#filePrefix#", this.filePrefix);
 		FileUtil.getInstance().createFile(
 				this.javaPath + pkgPath.replace(".", "/"),
-				fileName + ".java",
-				content);
+				fileName + ".java", content, this.encoding);
+		return pkgPath + "." + filePrefix;
+	}
+
+	private String createMapperXml(List<ColumnInfo> columns, String entityImport, String iMapperImport, String pkgPath,String fileName) throws IOException {
+		String content = FileUtil.getInstance().getInsideFile("/model/MapperXml.txt");
+		content = content.replace("#iMapperImport#", iMapperImport);
+		content = content.replace("#entityImport#", entityImport);
+		content = content.replace("#tableName#", this.tableName);
+		content = content.replace("#prmaryLimit#", this.primaryInfo.getUpdate());
+		StringBuffer dataSb = new StringBuffer();
+		StringBuffer columnsSb = new StringBuffer();
+		StringBuffer insertValuesSb = new StringBuffer();
+		StringBuffer updateSb = new StringBuffer();
+		ColumnInfo c;
+		for (int i = 0; i < columns.size(); i++) {
+			c = columns.get(i);
+			dataSb.append(c.getResultData());
+			if (0 == i){
+				columnsSb.append(c.getColumnName());
+				insertValuesSb.append(c.getValue());
+				updateSb.append(c.getUpdate());
+			} else {
+				insertValuesSb.append(",").append(c.getValue());
+				columnsSb.append(",").append(c.getColumnName());
+				updateSb.append(",\n").append(c.getUpdate());
+			}
+		}
+		content = content.replace("#columns#", columnsSb.toString());
+		content = content.replace("#resultData#", dataSb.toString());
+		content = content.replace("#insertValues#", insertValuesSb.toString());
+		content = content.replace("#updateValues#", updateSb.toString());
+//		System.out.println(content);
+		FileUtil.getInstance().createFile(
+				this.resourcesPath + "mapper/" + pkgPath.replace(".", "/"),
+				fileName + ".xml", content, this.encoding);
 		return pkgPath + "." + filePrefix;
 	}
 
@@ -183,6 +228,6 @@ public class PomMojo extends AbstractMojo{
 	 * @return
 	 */
 	private String getNameFromImport(String fileImport){
-		return fileImport.substring(fileImport.lastIndexOf("."));
+		return fileImport.substring(fileImport.lastIndexOf(".") + 1);
 	}
 }

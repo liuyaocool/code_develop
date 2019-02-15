@@ -1,8 +1,29 @@
-package model;
+package #controllerPkg#;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
+
+import #IServiceImport#
 
 @RestController
+@RequestMapping(value = "/#filePrefix#")
 public class Controller {
 
-    private String aa;
+    @Autowired
+    private #IService# baseService;
+
+     /**
+     * 查询所有数据方法
+     * @return
+     */
+    @RequestMapping(value = {"/queryAll"})
+    public GridResult getQueryAll(){
+        //调用service层查询所有的方法
+        List allList = inTbBaseCitytype.queryAllCityInfo();
+        //将查询数据发送至前台
+        return ResultValue.toGridResult(1, allList);
+    }
 
 }

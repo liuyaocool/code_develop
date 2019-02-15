@@ -71,6 +71,29 @@ public class FileUtil {
 		}
 		return null;
 	}
+
+	public void createFile(String filePath, String name, String content, String encoding) throws IOException {
+		System.out.println(filePath);
+		System.out.println(name);
+		File targetFile = new File(filePath);
+		if(!targetFile.exists()){
+			targetFile.mkdirs();
+		}
+		File file = new File(filePath + "/" + name);
+		if (!file.exists()) file.createNewFile();
+		FileOutputStream fos = new FileOutputStream(file, false);
+		OutputStreamWriter osw;
+		if (encoding == null || "".equals(encoding)) {
+			osw = new OutputStreamWriter(fos);
+		} else {
+			osw = new OutputStreamWriter(fos, encoding);
+		}
+
+		BufferedWriter bw = new BufferedWriter(osw);
+		bw.write(content);
+		bw.close();
+	}
+
 	public boolean createFile(String filePath, String fileName, String content){
 
 		File targetFile = new File(filePath);

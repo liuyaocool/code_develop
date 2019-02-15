@@ -18,12 +18,12 @@ public class ColumnInfo {
 	public ColumnInfo(String columnName, String columnDescription, String jdbcType) {
 		this.columnName = columnName;
 		this.columnDescription = columnDescription;
-		this.jdbcType = jdbcType;
+		this.jdbcType = jdbcType.substring(0,jdbcType.indexOf("("));
 		this.entityAttr = FileUtil.getInstance().stringFormat(columnName, false);
 
-		switch (jdbcType){
+		switch (this.jdbcType){
 			case "a": this.javaType = "";break;
-			case "TIMESTAMP": this.javaType = "Date";break;
+			case "TIMESTAMP": this.javaType = "";break;
 			case "b": this.javaType = "";break;
 			case "v": this.javaType = "";break;
 			case "d": this.javaType = "";break;
@@ -45,6 +45,32 @@ public class ColumnInfo {
 
 	public void setColumnType(int columnType) {
 		this.columnType = columnType;
+	}
+
+	//xml中的resultdata标签 <result column="USER_ID" jdbcType="VARCHAR" property="userId" />
+	public String getResultData(){
+		StringBuilder sb = new StringBuilder();
+		if (1 == columnType){
+			sb.append("<id column=\"");
+		} else {
+			sb.append("\t\t<result column=\"");
+		}
+		sb.append(this.columnName).append("\" jdbcType=\"").append(this.jdbcType)
+				.append("\" property=\"").append(this.entityAttr).append("\" />\n");
+		return sb.toString();
+	}
+
+	//xml中读取数据的字符串 #{userId,jdbcType=VARCHAR}
+	public String getValue() {
+		return new StringBuilder("#{").append(this.entityAttr).append(",jdbcType=")
+				.append(this.jdbcType).append("}").toString();
+	}
+
+	public String getUpdate() {
+		if (1 == this.columnType){
+			return new StringBuilder(this.columnName).append(" = ").append(getValue()).toString();
+		}
+		return new StringBuilder("\t\t").append(this.columnName).append(" = ").append(getValue()).toString();
 	}
 
 	public String getEntityAttr() {
