@@ -27,7 +27,7 @@ public class ColumnInfo {
 
 		switch (this.jdbcType){
 			case "a": this.javaType = "";break;
-			case "TIMESTAMP": this.javaType = "";break;
+			case "z": this.javaType = "";break;
 			case "b": this.javaType = "";break;
 			case "v": this.javaType = "";break;
 			case "d": this.javaType = "";break;
