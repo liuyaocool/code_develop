@@ -1,7 +1,7 @@
 package #servicePkg#;
 
-import java.util.List;
-
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import #entityImport#;
 import #iServiceImport#;
 import #iMapperImport#;
@@ -32,8 +32,9 @@ public class #fileName# implements #iServiceName#{
     };
 
     @Override
-    public List<#filePrefix#> selectAll(){
-        return baseMapper.selectAll();
+    public PageInfo<#filePrefix#> selectAll(int pageNum, int pageSize){
+        PageHelper.startPage(pageNum,pageSize);
+        return new PageInfo<>(baseMapper.selectAll());
     };
 
     @Override

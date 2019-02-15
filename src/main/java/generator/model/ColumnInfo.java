@@ -18,7 +18,11 @@ public class ColumnInfo {
 	public ColumnInfo(String columnName, String columnDescription, String jdbcType) {
 		this.columnName = columnName;
 		this.columnDescription = columnDescription;
-		this.jdbcType = jdbcType.substring(0,jdbcType.indexOf("("));
+		if (jdbcType.contains("(")){
+			this.jdbcType = jdbcType.substring(0,jdbcType.indexOf("("));
+		} else {
+			this.jdbcType = jdbcType;
+		}
 		this.entityAttr = FileUtil.getInstance().stringFormat(columnName, false);
 
 		switch (this.jdbcType){

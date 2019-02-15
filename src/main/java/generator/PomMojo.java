@@ -70,28 +70,30 @@ public class PomMojo extends AbstractMojo{
 		//包名(aa.bb.**.cc)，将路径中**替换成controller、service 等即可 全局可用
 		String pkgPath = getPkgPath();
 		System.out.println(pkgPath);
-//		System.out.println("control:" + pkgPath.replace("**", this.controllerPkg));
-//		System.out.println("service:" + pkgPath.replace("**", this.servicePkg));
-//		System.out.println("mapper:" + pkgPath.replace("**", this.mapperPkg));
-//		System.out.println("pojo:" + pkgPath.replace("**", this.pojoPkg));
 
 		SqlRunner sr = new SqlRunner(this.resourcesPath + this.sourcePath,
 				this.jdbcDriver,this.jdbcUrl,this.jdbcUsername,this.jdbcPwd,this.tableName);
 		List<ColumnInfo> columns = sr.executeScript();
 
+		System.out.println("数据库连接完成。");
 		try {
 			//创建实体类并返回导包信息
 			String entityImport = createEneity(this.filePrefix,columns, pkgPath.replace("**", this.pojoPkg));
 			//创建mapper接口并返回导包信息
-			String imapperImport = createInter(entityImport,pkgPath.replace("**", this.mapperPkg),"I"+this.filePrefix+"Mapper");
+			String imapperImport = createInter("IMapper.txt", entityImport,
+					pkgPath.replace("**", this.mapperPkg),"I"+this.filePrefix+"Mapper");
 			//创建mapper.xml
 			String mapperXmlPath = createMapperXml(columns,entityImport,imapperImport,
 					pkgPath.replace("**","").replace(this.proPkg,""),this.filePrefix+"Mapper");
 			//创建mapper接口并返回导包信息
-			String iserviceImport = createInter(entityImport,pkgPath.replace("**", this.servicePkg),"I"+this.filePrefix+"Service");
+			String iserviceImport = createInter("IService.txt",entityImport,
+					pkgPath.replace("**", this.servicePkg),"I"+this.filePrefix+"Service");
 			//创建service实现类并返回导包信息
 			String serviceImport = createServiceImpl(entityImport, iserviceImport, imapperImport,
 					pkgPath.replace("**", this.servicePkg) + ".impl",this.filePrefix+"Service");
+			//创建controller
+			String controlMapping = createController(entityImport,iserviceImport,
+					pkgPath.replace("**", this.controllerPkg), this.filePrefix+"Controller");
 
 		} catch (IOException e){
 //			e.printStackTrace();
@@ -154,9 +156,9 @@ public class PomMojo extends AbstractMojo{
 	 * @param entityImport 实体类导包路径
 	 * @return
 	 */
-	private String createInter(String entityImport,String pkgPath,String fileName) throws IOException {
+	private String createInter(String mfileName, String entityImport,String pkgPath,String fileName) throws IOException {
 
-		String content = FileUtil.getInstance().getInsideFile("/model/InterFace.txt");
+		String content = FileUtil.getInstance().getInsideFile("/model/"+mfileName);
 		content = content.replace("#filePrefix#", this.filePrefix);
 		content = content.replace("#entityImport#", entityImport);
 		content = content.replace("#primaryId#", this.primaryInfo.getEntityAttr());
@@ -221,6 +223,23 @@ public class PomMojo extends AbstractMojo{
 		return pkgPath + "." + filePrefix;
 	}
 
+	private String createController( String entityImport, String iServiceImport, String pkgPath, String fileName) throws IOException {
+		String content = FileUtil.getInstance().getInsideFile("/model/Controller.txt");
+		content = content.replace("#controllerPkg#", pkgPath);
+		content = content.replace("#IServiceImport#", iServiceImport);
+		content = content.replace("#entityImport#", entityImport);
+		String controllerMapping = FileUtil.getInstance().stringFormat(this.tableName, false);
+		content = content.replace("#controllerMapping#", controllerMapping);
+		content = content.replace("#IService#", getNameFromImport(iServiceImport));
+		content = content.replace("#filePrefix#", this.filePrefix);
+		content = content.replace("#controllerName#", fileName);
+		content = content.replace("#PrimaryId#",
+				FileUtil.getInstance().stringFormat(this.primaryInfo.getColumnName(), true));
+		FileUtil.getInstance().createFile(
+				this.javaPath + pkgPath.replace(".", "/"),
+				fileName + ".java", content, this.encoding);
+		return controllerMapping;
+	}
 
 	/**
 	 * 从导包路径中获得文件名（无后缀）

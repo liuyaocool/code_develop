@@ -1,0 +1,19 @@
+package #interPkg#;
+
+import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
+import #entityImport#;
+
+@Mapper
+public interface #fileName# {
+
+    int deleteByPrimaryKey(String #primaryId#);
+
+    int insert(#filePrefix# record);
+
+    #filePrefix# selectByPrimaryKey(String #primaryId#);
+
+    List<#filePrefix#> selectAll();
+
+    int updateByPrimaryKey(#filePrefix# record);
+}

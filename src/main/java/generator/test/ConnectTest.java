@@ -30,10 +30,10 @@ public class ConnectTest {
 //				"T_AUTH_USER_INFO_TB"
 //		);
 
-//		SqlRunner sr = new SqlRunner(System.getProperty("user.dir") + "/src/main/resources/application.yml",
-//				"","","","","T_SYS_MENU");
-//		List<ColumnInfo> ss= sr.executeScript();
-//		new PomMojo().createEneity("TSysMenu", ss, "org.test.generator.testtat.entry.pojo");
+		SqlRunner sr = new SqlRunner(System.getProperty("user.dir") + "/src/main/resources/application.yml",
+				"","","","","T_SYS_MENU");
+		List<ColumnInfo> ss= sr.executeScript();
+		new PomMojo().createEneity("TSysMenu", ss, "org.test.generator.testtat.entry.pojo");
 
 //		sqlQuarry();
 //		String[] aa = "aa.bb.cc".split("\\.");
@@ -41,8 +41,8 @@ public class ConnectTest {
 //		System.out.println(new PomMojo().getEneityContent("test_aaab",ss, "net.org.test.entity"));
 //		System.out.println("a.b.c".replace(".","/"));
 
-		String aa = "AAA(aa)";
-		System.out.println(aa.substring(0,aa.indexOf("(")));
+//		String aa = "AAA(aa)";
+//		System.out.println(aa.substring(0,aa.indexOf("(")));
 
 
 	}

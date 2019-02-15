@@ -1,6 +1,6 @@
 package #interPkg#;
 
-import java.util.List;
+import com.github.pagehelper.PageInfo;
 import #entityImport#;
 
 public interface #fileName# {
@@ -11,7 +11,7 @@ public interface #fileName# {
 
     #filePrefix# selectByPrimaryKey(String #primaryId#);
 
-    List<#filePrefix#> selectAll();
+    PageInfo<#filePrefix#> selectAll(int pageNum, int pageSize);
 
     int updateByPrimaryKey(#filePrefix# record);
 }

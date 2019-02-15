@@ -1,29 +1,102 @@
 package #controllerPkg#;
 
+import com.github.pagehelper.PageInfo;
+import net.zhuolutech.core.resultvalue.GridResult;
+import net.zhuolutech.core.resultvalue.Result;
+import net.zhuolutech.core.resultvalue.ResultValue;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import java.util.List;
 
-import #IServiceImport#
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
+import java.util.Map;
+import java.util.UUID;
+
+import #IServiceImport#;
+import #entityImport#;
 
 @RestController
-@RequestMapping(value = "/#filePrefix#")
-public class Controller {
+@RequestMapping(value = "/#controllerMapping#")
+public class #controllerName# {
 
     @Autowired
     private #IService# baseService;
 
-     /**
-     * 查询所有数据方法
-     * @return
-     */
-    @RequestMapping(value = {"/queryAll"})
-    public GridResult getQueryAll(){
-        //调用service层查询所有的方法
-        List allList = inTbBaseCitytype.queryAllCityInfo();
-        //将查询数据发送至前台
-        return ResultValue.toGridResult(1, allList);
-    }
+    /**
+	 * 通过主键查询
+	 * @param bean
+	 * @param request
+	 * @return
+	 */
+	@PostMapping(value = {"/selectById"})
+	public #filePrefix# selectOne(@Valid @RequestBody #filePrefix# bean, HttpServletRequest request){
+		String id = bean.getObjId();
+		return baseService.selectByPrimaryKey(id);
+	}
+
+	/**
+	 * 查询所有方法
+	 * @param request
+	 * @return
+	 */
+	@PostMapping(value = {"/selectAll"})
+	public GridResult selectAll(@Valid @RequestBody Map params, HttpServletRequest request){
+		int pageNum = (int)params.get("pageNum") < 1 ? 1 : (int) params.get("pageNum");
+        int pageSize = (int)params.get("pageSize") < 1 ? 20 : (int) params.get("pageSize");
+        PageInfo<#filePrefix#> pageList = baseService.selectAll(pageNum, pageSize);
+        return ResultValue.toGridResult(pageList.getTotal(),pageList.getList());
+	}
+
+	/**
+	 * 新增方法
+	 * @param bean
+	 * @param request
+	 * @return
+	 */
+	@PostMapping(value = {"/insert"})
+	public Result insert(@Valid @RequestBody #filePrefix# bean, HttpServletRequest request){
+		Result result = new Result(1,"新增失败。", bean);
+		bean.set#PrimaryId#(UUID.randomUUID().toString());
+		if (baseService.insert(bean) > 0){
+			result.setCode(0);
+			result.setMsg("新增成功。");
+		}
+		return result;
+	}
+
+	/**
+	 * 通过主键修改
+	 * @param bean
+	 * @param request
+	 * @return
+	 */
+	@PostMapping(value = {"/updateById"})
+	public Result update(@Valid @RequestBody #filePrefix# bean, HttpServletRequest request){
+		Result result = new Result(1,"修改失败。", bean);
+		if (baseService.updateByPrimaryKey(bean) > 0){
+			result.setCode(0);
+			result.setMsg("修改成功。");
+		}
+		return result;
+	}
+
+	/**
+	 * 通过主键删除
+	 * @param bean
+	 * @param request
+	 * @return
+	 */
+	@PostMapping(value = {"/deleteById"})
+	public Result delete(@Valid @RequestBody #filePrefix# bean, HttpServletRequest request){
+		Result result = new Result(1,"删除失败。", bean);
+		if (baseService.deleteByPrimaryKey(bean.get#PrimaryId#()) > 0){
+			result.setCode(0);
+			result.setMsg("删除成功。");
+		}
+		return result;
+	}
 
 }
