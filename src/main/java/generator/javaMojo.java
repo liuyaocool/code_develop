@@ -10,17 +10,15 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 @Mojo(
-		name = "test",
+		name = "java",
 		defaultPhase = LifecyclePhase.GENERATE_SOURCES,
 		requiresDependencyResolution = ResolutionScope.TEST
 )
-public class PomMojo extends AbstractMojo{
+public class javaMojo extends AbstractMojo{
 
 	private ThreadLocal<ClassLoader> savedClassloader = new ThreadLocal<>();
 
@@ -45,8 +43,8 @@ public class PomMojo extends AbstractMojo{
 	private String encoding;
 	@Parameter(property = "proPkg",required = true)
 	private String proPkg;
-	@Parameter(property = "pkg",required = true)
-	private Map<String,String> pkg;
+	@Parameter(property = "modelPkg",required = true)
+	private String modelPkg;
 	@Parameter(property = "controllerPkg", defaultValue = "controller")
 	private String controllerPkg;
 	@Parameter(property = "servicePkg", defaultValue = "service")
@@ -68,7 +66,7 @@ public class PomMojo extends AbstractMojo{
 		this.javaPath = System.getProperty("user.dir") + "/src/main/java/";
 		this.resourcesPath = System.getProperty("user.dir") + "/src/main/resources/";
 		//包名(aa.bb.**.cc)，将路径中**替换成controller、service 等即可 全局可用
-		String pkgPath = getPkgPath();
+		String pkgPath = this.proPkg + "." + this.modelPkg;
 		System.out.println(pkgPath);
 
 		SqlRunner sr = new SqlRunner(this.resourcesPath + this.sourcePath,
@@ -105,21 +103,6 @@ public class PomMojo extends AbstractMojo{
 //		FileUtil.getInstance().copyFile(FileUtil.getInstance().getFile(),
 //				projectPath + "resources\\application-dev.yml");
 
-	}
-
-	//获得包名
-	private String getPkgPath(){
-		String[] pkgRules = this.pkg.get("rule").split("\\.");
-		String pkgPath = this.proPkg;
-		for (int i = 0; i < pkgRules.length; i++) {
-			if ("*".equals(pkgRules[i])){
-				pkgPath += ".**";
-			} else {
-				if (null != this.pkg.get(pkgRules[i]))
-					pkgPath += "." + this.pkg.get(pkgRules[i]);
-			}
-		}
-		return pkgPath;
 	}
 
 	/**
