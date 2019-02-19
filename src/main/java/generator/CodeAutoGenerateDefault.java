@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @Mojo(
-		name = "testt",
+		name = "old",
 		defaultPhase = LifecyclePhase.GENERATE_SOURCES,
 		requiresDependencyResolution = ResolutionScope.TEST
 )

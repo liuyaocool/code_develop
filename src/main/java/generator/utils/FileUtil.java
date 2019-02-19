@@ -80,7 +80,13 @@ public class FileUtil {
 			targetFile.mkdirs();
 		}
 		File file = new File(filePath + "/" + name);
-		if (!file.exists()) file.createNewFile();
+		if (!file.exists()) {
+			file.createNewFile();
+		} else {
+			for (int i = 0; file.exists(); i++) {
+				file = new File(filePath + "/" + name + i);
+			}
+		}
 		FileOutputStream fos = new FileOutputStream(file, false);
 		OutputStreamWriter osw;
 		if (encoding == null || "".equals(encoding)) {
@@ -94,6 +100,7 @@ public class FileUtil {
 		bw.close();
 	}
 
+	//存在覆盖文件bug
 	public boolean createFile(String filePath, String fileName, String content){
 
 		File targetFile = new File(filePath);
