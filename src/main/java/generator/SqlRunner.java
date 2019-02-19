@@ -15,10 +15,9 @@ public class SqlRunner {
 	private String url;
 	private String userid;
 	private String password;
-	private String tableName;
 	private Log log;
 
-	public SqlRunner(String sourcePath, String driver, String url, String userId, String password, String tableName){
+	public SqlRunner(String sourcePath, String driver, String url, String userId, String password){
 		if (sourcePath.endsWith(".yml")){
 			Map<String, Map<String,Map<String,String>>> ymlMap = null;
 			try {
@@ -53,26 +52,24 @@ public class SqlRunner {
 			}
 
 		}
-		this.tableName = tableName;
 
-		System.out.println(this.driver+this.url+this.userid+this.password+this.tableName);
+		System.out.println(this.driver+this.url+this.userid+this.password);
 	}
-	public SqlRunner(String driver, String url, String userId, String password, String tableName) {
+	public SqlRunner(String driver, String url, String userId, String password) {
 			this.driver = driver;
 			this.url = url;
 			this.userid = userId;
 			this.password = password;
-			this.tableName = tableName;
 	}
 
-	public List<ColumnInfo> executeScript() throws MojoExecutionException {
+	public List<ColumnInfo> executeScript(String tableName) {
 		Connection connection = null;
 		PreparedStatement statement = null;
 		List<ColumnInfo> datas = new ArrayList<>();//保存字段名
 		try {
 			connection = DriverManager.getConnection(this.url, this.userid, this.password);
 //			connection.setAutoCommit(false);
-			String sql = getSql();
+			String sql = getSql(tableName);
 			statement = connection.prepareStatement(sql);
 			ResultSet rs = statement.executeQuery(sql);
 			while (rs.next()){
@@ -90,7 +87,7 @@ public class SqlRunner {
 			}
 //			connection.commit();
 		} catch (SQLException var18) {
-			throw new MojoExecutionException("SqlException: " + var18.getMessage(), var18);
+			throw new RuntimeException("SqlException: " + var18.getMessage(), var18);
 		} finally {
 			this.closeStatement(statement);
 			this.closeConnection(connection);
@@ -120,7 +117,7 @@ public class SqlRunner {
 
 	}
 
-	private String getSql(){
+	private String getSql(String tableName){
 		if (this.driver.contains("oracle")){
 			return "SELECT B.COLUMN_NAME NAME,A.COMMENTS DESCRIPTION,CU.COLUMN_NAME PRI, replace(B.DATA_TYPE,'VARCHAR2','VARCHAR') DATATYPE \n" +
 					"FROM USER_TAB_COLUMNS B \n" +
@@ -128,16 +125,16 @@ public class SqlRunner {
 					"LEFT JOIN (SELECT CU.TABLE_NAME,CU.COLUMN_NAME FROM USER_CONS_COLUMNS CU,USER_CONSTRAINTS AU \n" +
 					"WHERE CU.CONSTRAINT_NAME = AU.CONSTRAINT_NAME AND AU.CONSTRAINT_TYPE = 'P') CU " +
 					"ON CU.TABLE_NAME = B.TABLE_NAME AND B.COLUMN_NAME = CU.COLUMN_NAME \n" +
-					"WHERE B.TABLE_NAME = '" + this.tableName + "' ORDER BY B.COLUMN_ID ASC";
+					"WHERE B.TABLE_NAME = '" + tableName + "' ORDER BY B.COLUMN_ID ASC";
 		} else if (this.driver.contains("mysql")){
 			return "SELECT COLUMN_NAME NAME, COLUMN_COMMENT DESCRIPTION, COLUMN_KEY PRI, DATA_TYPE DATATYPE \n" +
-					" FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '" + this.tableName + " ORDER BY ORDINAL_POSITION ASC";
+					" FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '" + tableName + " ORDER BY ORDINAL_POSITION ASC";
 		} else if (this.driver.contains("sqlserver")){ //缺少datatype
 			return "SELECT B.NAME, C.VALUE AS DESCRIPTION, E.COLUMN_NAME PRI  FROM\n" +
 					"SYS.TABLES A INNER JOIN SYS.COLUMNS B ON B.OBJECT_ID = A.OBJECT_ID LEFT JOIN SYS.EXTENDED_PROPERTIES C ON C.MAJOR_ID = B.OBJECT_ID \n" +
 					"AND C.MINOR_ID = B.COLUMN_ID LEFT JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS D ON A.NAME = D.TABLE_NAME \n" +
 					"AND D.CONSTRAINT_TYPE = 'PRIMARY KEY' LEFT JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE E ON D.CONSTRAINT_NAME = E.CONSTRAINT_NAME \n" +
-					"AND B.NAME = E.COLUMN_NAME WHERE A.NAME = '" + this.tableName + "' ORDER BY B.COLUMN_ID ASC";
+					"AND B.NAME = E.COLUMN_NAME WHERE A.NAME = '" + tableName + "' ORDER BY B.COLUMN_ID ASC";
 		} else {
 			return null;
 		}
