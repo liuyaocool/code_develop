@@ -33,6 +33,15 @@ public class TableTask implements Runnable{
 		this.sqlRunner = sqlRunner;
 		this.javaPath = System.getProperty("user.dir") + "/src/main/java/";
 		this.resourcesPath = System.getProperty("user.dir") + "/src/main/resources/";
+//		System.out.println(this.proPkg + "/" + this.modelPkg +
+//		this.controllerPkg  + "/" +
+//				this.servicePkg  + "/" +
+//				this.mapperPkg  + "/" +
+//				this.pojoPkg  + "/" +
+//				this.encoding  + "/" +
+//				this.sqlRunner  + "/" +
+//				this.javaPath  + "/" +
+//				this.resourcesPath);
 	}
 
 	public TableTask myClone(String tableName){
@@ -75,8 +84,7 @@ public class TableTask implements Runnable{
 //			e.printStackTrace();
 			System.out.println(e.toString());
 		}
-
-
+		System.out.println(tableName + "创建完成");
 	}
 
 
@@ -94,12 +102,10 @@ public class TableTask implements Runnable{
 		StringBuffer sbGetSet = new StringBuffer();
 		for (int i = 0; i < columns.size(); i++) {
 			if (columns.get(i).getColumnType() == 1) this.primaryInfo = columns.get(i);
-			sb.append("\n\t").append("private ").append(columns.get(i).getJavaType())
-					.append(" ").append(columns.get(i).getEntityAttr())
-					.append(";//").append(columns.get(i).getColumnDescription());
+			sb.append(columns.get(i).getEntity());
 			sbGetSet.append(columns.get(i).getGetterMethod()).append(columns.get(i).getSetterMethod());
 		}
-		sb.append("\n\n\tpublic ").append(filePrefix).append(" (){}\n");
+		sb.append("\n\tpublic ").append(filePrefix).append(" (){}\n");
 		sb.append(sbGetSet).append("\n}");
 
 		FileUtil.getInstance().createFile(

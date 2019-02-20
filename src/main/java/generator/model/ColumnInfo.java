@@ -70,6 +70,14 @@ public class ColumnInfo {
 				.append(this.jdbcType).append("}").toString();
 	}
 
+	//实体类中获得属性 private String userId;
+	public String getEntity(){
+		return new StringBuilder("\n\tprivate ").append(this.javaType)
+				.append(" ").append(this.entityAttr).append(";//")
+				.append(this.columnDescription).append("\n").toString();
+	}
+
+	//xml中获得更新方法 字段的sql USER_ID = #{userId,jdbcType=VARCHAR}
 	public String getUpdate() {
 		if (1 == this.columnType){
 			return new StringBuilder(this.columnName).append(" = ").append(getValue()).toString();
@@ -85,16 +93,8 @@ public class ColumnInfo {
 		return columnName;
 	}
 
-	public String getColumnDescription() {
-		return columnDescription;
-	}
-
 	public int getColumnType() {
 		return columnType;
-	}
-
-	public String getJdbcType() {
-		return jdbcType;
 	}
 
 	public String getGetterMethod() {
@@ -105,7 +105,4 @@ public class ColumnInfo {
 		return setterMethod;
 	}
 
-	public String getJavaType() {
-		return javaType;
-	}
 }

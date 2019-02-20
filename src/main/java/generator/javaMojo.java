@@ -1,8 +1,6 @@
 package generator;
 
-import generator.model.ColumnInfo;
 import generator.model.TableTask;
-import generator.utils.FileUtil;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -10,9 +8,6 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-
-import java.io.IOException;
-import java.util.List;
 
 @Mojo(
 		name = "java",
@@ -55,21 +50,17 @@ public class javaMojo extends AbstractMojo{
 	@Parameter(property = "pojoPkg", defaultValue = "pojo")
 	private String pojoPkg;
 
-	private String javaPath; //java路径
-	private String resourcesPath;// 资源路径
-	private String filePrefix;	//文件前缀名(实体类名)
-	private ColumnInfo primaryInfo;// 主键名
-
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
 
 		String[] tables = this.tableName.split(",");
-		SqlRunner sr = new SqlRunner(this.resourcesPath + this.sourcePath,
-				this.jdbcDriver,this.jdbcUrl,this.jdbcUsername,this.jdbcPwd);
+		SqlRunner sr = new SqlRunner(this.sourcePath, this.jdbcDriver,this.jdbcUrl,this.jdbcUsername,this.jdbcPwd);
 		TableTask tableTask = new TableTask(this.proPkg,this.modelPkg,this.controllerPkg,
 				this.servicePkg, this.mapperPkg,this.pojoPkg, this.encoding, sr);
 		for (int i = 0; i < tables.length; i++) {
-			new Thread(tableTask.myClone(tableName)).start();
+			//若使用多异步操作需要确认所有线程执行完毕才可返回
+//			new Thread(tableTask.myClone(tables[i])).start();
+			tableTask.create(tables[i]);
 		}
 	}
 }

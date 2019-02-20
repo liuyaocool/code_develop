@@ -3,6 +3,7 @@ package generator.test;
 import generator.javaMojo;
 import generator.SqlRunner;
 import generator.model.ColumnInfo;
+import generator.model.TableTask;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import java.io.IOException;
@@ -27,10 +28,10 @@ public class ConnectTest {
 //				"T_AUTH_USER_INFO_TB"
 //		);
 
-		SqlRunner sr = new SqlRunner(System.getProperty("user.dir") + "/src/main/resources/application.yml",
-				"","","","","T_SYS_MENU");
-		List<ColumnInfo> ss= sr.executeScript();
-		new javaMojo().createEneity("TSysMenu", ss, "org.test.generator.testtat.entry.pojo");
+//		SqlRunner sr = new SqlRunner(System.getProperty("user.dir") + "/src/main/resources/application.yml",
+//				"","","","","T_SYS_MENU");
+//		List<ColumnInfo> ss= sr.executeScript();
+//		new TableTask().createEneity("TSysMenu", ss, "org.test.generator.testtat.entry.pojo");
 
 //		sqlQuarry();
 //		String[] aa = "aa.bb.cc".split("\\.");

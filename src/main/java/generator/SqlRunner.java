@@ -5,8 +5,6 @@ import java.sql.*;
 import java.util.*;
 
 import generator.model.ColumnInfo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 import org.ho.yaml.Yaml;
 
 public class SqlRunner {
@@ -15,9 +13,9 @@ public class SqlRunner {
 	private String url;
 	private String userid;
 	private String password;
-	private Log log;
 
 	public SqlRunner(String sourcePath, String driver, String url, String userId, String password){
+		sourcePath = System.getProperty("user.dir") + "/src/main/resources/" + sourcePath;
 		if (sourcePath.endsWith(".yml")){
 			Map<String, Map<String,Map<String,String>>> ymlMap = null;
 			try {
@@ -36,7 +34,7 @@ public class SqlRunner {
 			try {
 				fis = new FileInputStream(sourcePath);
 				Properties p = new Properties();
-				p.load(new FileInputStream(sourcePath));
+				p.load(fis);
 				this.driver = p.getProperty(driver);
 				this.url = p.getProperty(url);
 				this.userid = p.getProperty(userId);
@@ -53,7 +51,7 @@ public class SqlRunner {
 
 		}
 
-		System.out.println(this.driver+this.url+this.userid+this.password);
+//		System.out.println(this.driver+this.url+this.userid+this.password);
 	}
 	public SqlRunner(String driver, String url, String userId, String password) {
 			this.driver = driver;
@@ -87,7 +85,7 @@ public class SqlRunner {
 			}
 //			connection.commit();
 		} catch (SQLException var18) {
-			throw new RuntimeException("SqlException: " + var18.getMessage(), var18);
+			System.out.println("SQLException on connection:" + var18);
 		} finally {
 			this.closeStatement(statement);
 			this.closeConnection(connection);
@@ -100,7 +98,7 @@ public class SqlRunner {
 			try {
 				connection.close();
 			} catch (SQLException var3) {
-				this.log.debug("SQLException on close connection", var3);
+				System.out.println("SQLException on close connection" + var3);
 			}
 		}
 
@@ -111,7 +109,7 @@ public class SqlRunner {
 			try {
 				statement.close();
 			} catch (SQLException var3) {
-				this.log.debug("SQLException on close statement", var3);
+				System.out.println("SQLException on close statement" + var3);
 			}
 		}
 
