@@ -38,7 +38,7 @@ public class javaHelpMojo extends AbstractMojo{
 		System.out.println("\t\t<servicePkg>myservice</servicePkg>（选填）");
 		System.out.println("\t\t<mapperPkg>entry.mymapper</mapperPkg>（选填）");
 		System.out.println("\t\t<pojoPkg>entry.mypojoo</pojoPkg>（选填）");
-		System.out.println("\t\t<tableName>T_AUTH_USER_INFO_TB</tableName>（必填）");
+		System.out.println("\t\t<tableName>表名1,表名2，。。。</tableName>（必填）");
 		System.out.println("\t</configuration>");
 		System.out.println("</plugin>");
 

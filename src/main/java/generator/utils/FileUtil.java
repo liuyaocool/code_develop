@@ -93,7 +93,7 @@ public class FileUtil {
 		BufferedWriter bw = new BufferedWriter(osw);
 		bw.write(content);
 		bw.close();
-		System.out.println(filePath + name + "创建完成。");
+		System.out.println(filePath + "/" + name + "创建完成。");
 	}
 
 	//存在覆盖文件bug
