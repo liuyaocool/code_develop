@@ -12,7 +12,10 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 		defaultPhase = LifecyclePhase.GENERATE_SOURCES,
 		requiresDependencyResolution = ResolutionScope.TEST
 )
-public class javaHelpMojo extends AbstractMojo{
+public class JavaHelpMojo extends AbstractMojo{
+
+	//保存当前线程数
+	public static int taskCount = 0;
 
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {

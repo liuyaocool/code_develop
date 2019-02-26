@@ -10,8 +10,7 @@ public class ColumnInfo {
 	private String jdbcType;//表字段类型
 	private String javaType;//实体类属性类型
 	private int columnType; //1:主键  0：非主键
-	private String getterMethod;//get方法
-	private String setterMethod;//set方法字符串
+	private String whereXml;// mapperxml中条件查询的字符串: <if test='id != null'> and id = '%id%'</if>
 
 	public ColumnInfo() { }
 
@@ -33,18 +32,6 @@ public class ColumnInfo {
 			case "d": this.javaType = "";break;
 			default: this.javaType = "String";break;
 		}
-
-		String bigEntityAttr = FileUtil.getInstance().stringFormat(columnName, true);
-		String aaa = "\n\tpublic void set@@@(%%% ###){ this.### = ### == null ? null : ###.trim(); }\n";
-		aaa = aaa.replace("###", this.entityAttr);
-		aaa = aaa.replace("@@@", bigEntityAttr);
-		this.setterMethod = aaa.replace("%%%", this.javaType);
-		aaa = "\n\tpublic %%% get@@@(){ return this.###; }\n";
-		aaa = aaa.replace("@@@", bigEntityAttr);
-		aaa = aaa.replace("###", this.entityAttr);
-		this.getterMethod = aaa.replace("%%%", this.javaType);
-
-//		System.out.print(this.getterMethod + this.setterMethod);
 	}
 
 	public void setColumnType(int columnType) {
@@ -85,6 +72,17 @@ public class ColumnInfo {
 		return new StringBuilder("\t\t").append(this.columnName).append(" = ").append(getValue()).toString();
 	}
 
+	//oracle获得mybatis xml中 where条件查询
+	private String getXmlWhere(){
+		String whereStr = "\n\t\t<if test=\"@@@ != '' and @@@ != null\">\n\t\t\tand ### @#$\n\t\t</if>";
+		if (1 == this.columnType){
+			whereStr.replace("@#$", "= #{@@@}");
+		} else {
+			whereStr.replace("@#$", "like '%'||#{@@@}||'%'");
+		}
+		return whereStr.replace("@@@",this.entityAttr).replace("###",this.columnName);
+	}
+
 	public String getEntityAttr() {
 		return entityAttr;
 	}
@@ -97,12 +95,20 @@ public class ColumnInfo {
 		return columnType;
 	}
 
-	public String getGetterMethod() {
-		return getterMethod;
+	//返回getset方法字符串
+	public String getGetSetMethod() {
+		String aaa = "\n\tpublic void set@@@(%%% ###){ this.### = ### == null ? null : ###.trim(); }\n\n\tpublic %%% get@@@(){ return this.###; }\n";
+		aaa = aaa.replace("###", this.entityAttr);
+		aaa = aaa.replace("@@@", FileUtil.getInstance().stringFormat(columnName, true));
+		return aaa.replace("%%%", this.javaType);
 	}
 
-	public String getSetterMethod() {
-		return setterMethod;
+	public String getWhereXml() {
+//		return this.whereXml;
+		return getXmlWhere();
 	}
 
+	public void setWhereXml(String whereXml) {
+		this.whereXml = whereXml;
+	}
 }

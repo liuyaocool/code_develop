@@ -1,0 +1,118 @@
+/**
+ * 通用js 页面引用后支持基本增删改查
+ * @type {string}
+ */
+var url='';
+layui.use(['table', '$util', 'layer', 'form'], function(){
+    var table = layui.table,
+        layer = layui.layer, //弹层
+        form = layui.form,
+        global = layui.$util.mappath(globalUrl);
+    table.render({
+        elem: '#mainTable',
+        url: global + 'getDepartmentList',
+        height: window.innerHeight - document.getElementById("toolbar").offsetHeight - 10,
+        cellMinWidth: 80 ,//全局定义常规单元格的最小宽度，layui 2.2.1 新增
+        // title: '信息',
+        method:'POST',
+        where: {},
+        contentType: 'application/json',
+        page: true, //开启分页
+        toolbar: 'default', //开启工具栏，此处显示默认图标，可以自定义模板，详见文档
+        defaultToolbar:['filter'],
+        totalRow: false, //合计行
+        autoSort: false, //自动排序。只能当前页面的数据排序
+        cols: [layColumns],
+        id:'mainTable',
+        limit:10,   //默认十条数据一页
+        limits:[10,20,30,50],  //数据分页条
+    });
+    table.on('toolbar(mainTable)', function(obj){
+        var checkStatus = table.checkStatus(obj.config.id),
+             data = checkStatus.data; //获取选中的数据
+
+        switch(obj.event){
+            case 'add':
+                $("#newAddForm").formClear();
+                layer.open({
+                    type: 1,
+                    skin: 'layui-layer-lan',
+                    content:  $("#newAddForm"),
+                    area: ['50%', ''],
+                    title:'新增信息',
+                });
+                url = "insert";
+                break;
+            case 'update':
+                $("#newAddForm").formClear();
+                if(data.length === 0){
+                    layer.msg('请选择一行');
+                } else if(data.length > 1){
+                    layer.msg('只能同时编辑一个');
+                } else {
+                    // form.val('newAddForm', data[0]);
+                    $("#newAddForm").formLoad(data[0]);
+                    url='updateById';
+                    layer.open({
+                        type: 1,
+                        skin: 'layui-layer-lan',
+                        content:  $("#newAddForm"),
+                        area: ['50%', ''],
+                        title:'修改信息'
+                    });
+                }
+                break;
+            case 'delete':
+                layer.confirm('确认删除' + data.length + '条数据吗？', function (index) {
+                    $.ajax({
+                        url: global + 'deleteById',
+                        method:'post',
+                        data: JSON.stringify(data),
+                        dataType:'json',
+                        contentType: 'application/json',
+                        success:function(res){
+                            if(res.code==0){
+                                table.reload('mainTable');
+                            }
+                            layer.close(index);
+                            layer.msg(res.msg);
+                        },
+                        error:function (data) {
+                            layer.msg("操作失败。");
+                        }
+                    }) ;
+                    layer.close(index);
+                });
+
+                break;
+        };
+        form.on('submit(formDemo)', function (data) {
+            var params = JSON.stringify(data.field);
+            $.ajax({
+                url: global + url,
+                method: 'post',
+                data: params,
+                dataType: 'JSON',
+                contentType: 'application/json',
+                success: function (res) {
+                    if(res.code==0){
+                        //需在第一位，否则会关闭msg弹出层 此参数☞最新弹出层
+                        layer.close(layer.index);
+                        table.reload('mainTable');
+                    }
+                    layer.msg(res.msg);
+                },
+                error: function (data) {
+                    layer.msg("操作失败。");
+                }
+            });
+            return false;
+        });
+    });
+});
+layui.use('form', function () {
+    layui.form.on('submit(formSearch)', function (data) {
+        layui.table.reload('mainTable', {where: data.field});
+        return false;
+    });
+});

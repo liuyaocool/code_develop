@@ -1,14 +1,9 @@
 package generator.test;
 
-import generator.javaMojo;
-import generator.SqlRunner;
-import generator.model.ColumnInfo;
-import generator.model.TableTask;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import java.io.IOException;
 import java.sql.*;
-import java.util.List;
 
 public class ConnectTest {
 

@@ -3,15 +3,16 @@ package #interPkg#;
 import com.github.pagehelper.PageInfo;
 import #entityImport#;
 
+import java.util.List;
+import java.util.Map;
+
 public interface #fileName# {
 
-    int deleteByPrimaryKey(String #primaryId#);
+    int deleteByPrimaryKey(List<#filePrefix#> beans);
 
     int insert(#filePrefix# record);
 
-    #filePrefix# selectByPrimaryKey(String #primaryId#);
+    PageInfo<#filePrefix#> selectAll(Map params);
 
-    PageInfo<#filePrefix#> selectAll(int pageNum, int pageSize);
-
-    int updateByPrimaryKey(#filePrefix# record);
+    int updateByPrimaryKey(#filePrefix# beans);
 }

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -25,28 +26,14 @@ public class #controllerName# {
     @Autowired
     private #IService# baseService;
 
-    /**
-	 * 通过主键查询
-	 * @param bean
-	 * @param request
-	 * @return
-	 */
-	@PostMapping(value = {"/selectById"})
-	public #filePrefix# selectOne(@Valid @RequestBody #filePrefix# bean, HttpServletRequest request){
-		String id = bean.getObjId();
-		return baseService.selectByPrimaryKey(id);
-	}
-
 	/**
-	 * 查询所有方法
+	 * 查询方法 模糊 分页
 	 * @param request
 	 * @return
 	 */
 	@PostMapping(value = {"/selectAll"})
 	public GridResult selectAll(@Valid @RequestBody Map params, HttpServletRequest request){
-		int pageNum = (int)params.get("pageNum") < 1 ? 1 : (int) params.get("pageNum");
-        int pageSize = (int)params.get("pageSize") < 1 ? 20 : (int) params.get("pageSize");
-        PageInfo<#filePrefix#> pageList = baseService.selectAll(pageNum, pageSize);
+        PageInfo<#filePrefix#> pageList = baseService.selectAll(params);
         return ResultValue.toGridResult(pageList.getTotal(),pageList.getList());
 	}
 
@@ -84,15 +71,15 @@ public class #controllerName# {
 	}
 
 	/**
-	 * 通过主键删除
+	 * 通过主键批量删除
 	 * @param bean
 	 * @param request
 	 * @return
 	 */
 	@PostMapping(value = {"/deleteById"})
-	public Result delete(@Valid @RequestBody #filePrefix# bean, HttpServletRequest request){
-		Result result = new Result(1,"删除失败。", bean);
-		if (baseService.deleteByPrimaryKey(bean.get#PrimaryId#()) > 0){
+	public Result delete(@Valid @RequestBody List<#filePrefix#> beans, HttpServletRequest request){
+		Result result = new Result(1,"删除失败。", beans);
+		if (baseService.deleteByPrimaryKey(beans) > 0){
 			result.setCode(0);
 			result.setMsg("删除成功。");
 		}

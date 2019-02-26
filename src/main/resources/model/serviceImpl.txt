@@ -9,6 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Map;
+
 @Service
 @Primary
 public class #fileName# implements #iServiceName#{
@@ -17,8 +20,8 @@ public class #fileName# implements #iServiceName#{
 	private #iMapperName# baseMapper;
 
     @Override
-    public int deleteByPrimaryKey(String primaryId){
-        return baseMapper.deleteByPrimaryKey(primaryId);
+    public int deleteByPrimaryKey(List<#filePrefix#> beans){
+        return baseMapper.deleteByPrimaryKey(beans);
     };
 
     @Override
@@ -27,14 +30,9 @@ public class #fileName# implements #iServiceName#{
     };
 
     @Override
-    public #filePrefix# selectByPrimaryKey(String primaryId){
-        return baseMapper.selectByPrimaryKey(primaryId);
-    };
-
-    @Override
-    public PageInfo<#filePrefix#> selectAll(int pageNum, int pageSize){
-        PageHelper.startPage(pageNum,pageSize);
-        return new PageInfo<>(baseMapper.selectAll());
+    public PageInfo<#filePrefix#> selectAll(Map params){
+        PageHelper.startPage((int) params.get("page"), (int)params.get("limit"));
+        return new PageInfo<>(baseMapper.selectAll(params));
     };
 
     @Override

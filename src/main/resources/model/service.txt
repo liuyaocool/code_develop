@@ -1,8 +1,0 @@
-package model;
-
-@RestController
-public class Controller {
-
-    private String aa;
-
-}

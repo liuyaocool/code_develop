@@ -1,8 +1,44 @@
-package model;
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ include file="/jsp/common/javaCode.jsp" %>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>列表</title>
+    <%--静态引用不会重新编译 动态每次都会重新编译--%>
+    <%@ include file="/jsp/common/headerCss.jsp" %>
 
-@RestController
-public class Controller {
+</head>
+<body style="background-color: #FFF;">
 
-    private String aa;
+<div id="toolbar" style="padding: 10px">
+    <form id="searchForm" method="post" class="layui-form" lay-filter="formSearch">
+        #searchAttr#
+        <button type="button" class="layui-btn layui-btn-normal" lay-submit lay-filter="formSearch">查询</button>
+        <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+    </form>
+</div>
 
-}
+<form id="newAddForm" method="post" style="padding: 20px" hidden class="layui-form" lay-filter="formDemo">
+    #inputAttr#
+    <div style="text-align: center; margin-top: 10px" >
+        <button class="layui-btn" lay-submit lay-filter="formDemo">提交</button>
+        <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+    </div>
+</form>
+
+<table class="layui-hide" id="mainTable" lay-filter="mainTable"></table>
+
+</body>
+
+<script>
+    var globalUrl = '#controllerUrl#/';
+    var layColumns = [
+        {type: 'checkbox'},
+        {title: '序号',type:'numbers',width:50,align:'center'},
+        #layuifield#
+    ]
+</script>
+<%@ include file="/jsp/common/footerScript.jsp" %>
+<script type="application/javascript" src="/jsp/common.js"></script>
+
+</html>

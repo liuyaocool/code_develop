@@ -8,8 +8,11 @@
 
     <sql id="columns">#columns#</sql>
 
-    <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
-        delete from #tableName# where #prmaryLimit#
+    <delete id="deleteByPrimaryKey" parameterType="java.util.List">
+        delete from #tableName# where #prmaryColumn# in
+        <foreach collection="beans" item="bean" index="index" open="(" close=")" separator=",">
+            #{bean.#entityPrimary#,jdbcType=VARCHAR}
+        </foreach>
     </delete>
 
     <insert id="insert" parameterType="#entityImport#">
@@ -23,15 +26,10 @@
         where #prmaryLimit#
     </update>
 
-    <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+    <select id="selectAll" resultMap="BaseResultMap" parameterType="java.util.Map">
         select <include refid="columns"></include>
         from #tableName#
-        where #prmaryLimit#
-    </select>
-
-    <select id="selectAll" resultMap="BaseResultMap">
-        select <include refid="columns"></include>
-        from #tableName#
+        where 1=1  #whereVague#
     </select>
 
 </mapper>

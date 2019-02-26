@@ -1,5 +1,6 @@
 package generator.model;
 
+import generator.JavaHelpMojo;
 import generator.SqlRunner;
 import generator.utils.FileUtil;
 
@@ -18,11 +19,12 @@ public class TableTask implements Runnable{
 	private String pojoPkg;//
 	private String javaPath;// java路径
 	private String resourcesPath;// 资源路径
+	private String webFolder;// jsp页面路径
 	private String encoding;// 编码
 	private String tableName;// 编码
 	private SqlRunner sqlRunner;// 数据库驱动
 
-	public TableTask(String proPkg, String modelPkg, String controllerPkg, String servicePkg, String mapperPkg, String pojoPkg, String encoding, SqlRunner sqlRunner) {
+	public TableTask(String proPkg, String modelPkg, String controllerPkg, String servicePkg, String mapperPkg, String pojoPkg, String encoding, String webFolder, SqlRunner sqlRunner) {
 		this.proPkg = proPkg;
 		this.modelPkg = modelPkg;
 		this.controllerPkg = controllerPkg;
@@ -33,6 +35,7 @@ public class TableTask implements Runnable{
 		this.sqlRunner = sqlRunner;
 		this.javaPath = System.getProperty("user.dir") + "/src/main/java/";
 		this.resourcesPath = System.getProperty("user.dir") + "/src/main/resources/";
+		this.webFolder = webFolder;
 //		System.out.println(this.proPkg + "/" + this.modelPkg +
 //		this.controllerPkg  + "/" +
 //				this.servicePkg  + "/" +
@@ -46,7 +49,7 @@ public class TableTask implements Runnable{
 
 	public TableTask myClone(String tableName){
 		TableTask tableTask = new TableTask(this.proPkg,this.modelPkg,this.controllerPkg,
-				this.servicePkg, this.mapperPkg,this.pojoPkg, this.encoding, this.sqlRunner);
+				this.servicePkg, this.mapperPkg,this.pojoPkg, this.encoding, this.webFolder, this.sqlRunner);
 		tableTask.setTableName(tableName);
 		return tableTask;
 	}
@@ -80,11 +83,13 @@ public class TableTask implements Runnable{
 			String controlMapping = createController(tableName,entityImport,iserviceImport,
 					pkgPath.replace("**", this.controllerPkg), this.filePrefix+"Controller");
 
+			System.out.println(tableName + "创建完成");
 		} catch (IOException e){
 //			e.printStackTrace();
 			System.out.println(e.toString());
+		} finally {
+			JavaHelpMojo.taskCount--;
 		}
-		System.out.println(tableName + "创建完成");
 	}
 
 
@@ -95,7 +100,7 @@ public class TableTask implements Runnable{
 	 * @param pkgPath 包名
 	 * @return
 	 */
-	public String createEneity(String filePrefix, List<ColumnInfo> columns, String pkgPath) throws IOException {
+	private String createEneity(String filePrefix, List<ColumnInfo> columns, String pkgPath) throws IOException {
 
 		StringBuffer sb = new StringBuffer("package ").append(pkgPath).append(";\n\n");
 		sb.append("public class ").append(filePrefix).append("{\n");
@@ -103,7 +108,7 @@ public class TableTask implements Runnable{
 		for (int i = 0; i < columns.size(); i++) {
 			if (columns.get(i).getColumnType() == 1) this.primaryInfo = columns.get(i);
 			sb.append(columns.get(i).getEntity());
-			sbGetSet.append(columns.get(i).getGetterMethod()).append(columns.get(i).getSetterMethod());
+			sbGetSet.append(columns.get(i).getGetSetMethod());
 		}
 		sb.append("\n\tpublic ").append(filePrefix).append(" (){}\n");
 		sb.append(sbGetSet).append("\n}");
@@ -125,7 +130,6 @@ public class TableTask implements Runnable{
 		String content = FileUtil.getInstance().getInsideFile("/model/"+mfileName);
 		content = content.replace("#filePrefix#", this.filePrefix);
 		content = content.replace("#entityImport#", entityImport);
-		content = content.replace("#primaryId#", this.primaryInfo.getEntityAttr());
 		content = content.replace("#interPkg#", pkgPath);
 		content = content.replace("#fileName#", fileName);
 
@@ -158,15 +162,19 @@ public class TableTask implements Runnable{
 		content = content.replace("#entityImport#", entityImport);
 		content = content.replace("#tableName#", tableName);
 		content = content.replace("#prmaryLimit#", this.primaryInfo.getUpdate());
+		content = content.replace("#prmaryColumn#", this.primaryInfo.getColumnName());
+		content = content.replace("#entityPrimary#", this.primaryInfo.getEntityAttr());
 		StringBuffer dataSb = new StringBuffer();
 		StringBuffer columnsSb = new StringBuffer();
 		StringBuffer insertValuesSb = new StringBuffer();
 		StringBuffer updateSb = new StringBuffer();
+		StringBuffer whereSb = new StringBuffer();
 		ColumnInfo c;
 		for (int i = 0; i < columns.size(); i++) {
 			c = columns.get(i);
 			dataSb.append(c.getResultData());
-			if (0 == i){
+			whereSb.append(c.getWhereXml());
+			if (0 == i){//第一个不加逗号
 				columnsSb.append(c.getColumnName());
 				insertValuesSb.append(c.getValue());
 				updateSb.append(c.getUpdate());
@@ -180,6 +188,7 @@ public class TableTask implements Runnable{
 		content = content.replace("#resultData#", dataSb.toString());
 		content = content.replace("#insertValues#", insertValuesSb.toString());
 		content = content.replace("#updateValues#", updateSb.toString());
+		content = content.replace("#whereVague#", whereSb);
 //		System.out.println(content);
 		FileUtil.getInstance().createFile(
 				this.resourcesPath + "mapper/" + pkgPath.replace(".", "/"),
@@ -203,6 +212,44 @@ public class TableTask implements Runnable{
 				this.javaPath + pkgPath.replace(".", "/"),
 				fileName + ".java", content, this.encoding);
 		return controllerMapping;
+	}
+
+	/**
+	 *
+	 * @param controllerMap 控制层请求路径
+	 * @param columns
+	 */
+	private void createJsp(String controllerMap, List<ColumnInfo> columns, String pkgPath) throws IOException {
+		String content = FileUtil.getInstance().getInsideFile("/model/jsp.txt");
+		content = content.replace("#controllerUrl#", controllerMap);
+		StringBuilder searchSb = new StringBuilder();
+		StringBuilder inputSb = new StringBuilder("<input name='").append(this.primaryInfo.getEntityAttr()).append("' hidden>");
+		StringBuilder fieldSb = new StringBuilder();
+		ColumnInfo c;
+		for (int i = 0; i < columns.size(); i++) {
+			c = columns.get(i);
+			if (1 != c.getColumnType()){
+
+			}
+		}
+		content = content.replace("#searchAttr#", searchSb.toString());
+		content = content.replace("#inputAttr#", inputSb.toString());
+		content = content.replace("#layuifield#", fieldSb.toString());
+
+		FileUtil.getInstance().createFile(
+				(this.resourcesPath + this.webFolder + pkgPath).replace(".", "/"),
+				this.filePrefix + ".jsp", content, this.encoding);
+	}
+
+	/**
+	 * 创建通用js
+	 */
+	private void createCommonJs() throws IOException {
+
+		String content = FileUtil.getInstance().getInsideFile("/model/jsp.txt");
+		FileUtil.getInstance().createFile(
+				this.resourcesPath + this.webFolder.replace(".", "/"),
+				"common.js", content, this.encoding);
 	}
 
 	/**
