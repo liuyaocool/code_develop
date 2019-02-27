@@ -72,7 +72,7 @@ public class #controllerName# {
 
 	/**
 	 * 通过主键批量删除
-	 * @param bean
+	 * @param beans
 	 * @param request
 	 * @return
 	 */

@@ -160,8 +160,9 @@ public class FileUtil {
 		for (int i = 0; i < strs.length; i++) {
 			str += strs[i].substring(0, 1).toUpperCase() + strs[i].substring(1).toLowerCase();
 		}
-		if (firsCharBig) return str;
-		return str.substring(0,1).toLowerCase() + str.substring(1);
+		str = str.substring(0,2).toLowerCase() + str.substring(2);
+		if (firsCharBig) return str.substring(0,1).toUpperCase() + str.substring(1);
+		return str;
 	}
 
 	/**

@@ -82,7 +82,7 @@ public class TableTask implements Runnable{
 			//创建controller
 			String controlMapping = createController(tableName,entityImport,iserviceImport,
 					pkgPath.replace("**", this.controllerPkg), this.filePrefix+"Controller");
-			createJsp(controlMapping,columns,pkgPath.replace(".**", ""));
+			createJsp(controlMapping,columns);
 
 			System.out.println(tableName + "创建完成");
 		} catch (IOException e){
@@ -103,7 +103,7 @@ public class TableTask implements Runnable{
 	 */
 	private String createEneity(String filePrefix, List<ColumnInfo> columns, String pkgPath) throws IOException {
 
-		StringBuffer sb = new StringBuffer("package ").append(pkgPath).append(";\n\n");
+		StringBuffer sb = new StringBuffer("package ").append(pkgPath).append(";\n\nimport java.util.*;\nimport java.text.*;\n\n");
 		sb.append("public class ").append(filePrefix).append("{\n");
 		StringBuffer sbGetSet = new StringBuffer();
 		for (int i = 0; i < columns.size(); i++) {
@@ -218,7 +218,7 @@ public class TableTask implements Runnable{
 	 * @param controllerMap 控制层请求路径
 	 * @param columns
 	 */
-	private void createJsp(String controllerMap, List<ColumnInfo> columns, String pkgPath) throws IOException {
+	private void createJsp(String controllerMap, List<ColumnInfo> columns) throws IOException {
 		String content = FileUtil.getInstance().getInsideFile("/model/jsp.txt");
 		content = content.replace("#controllerUrl#", controllerMap);
 		StringBuilder searchSb = new StringBuilder();
@@ -238,8 +238,8 @@ public class TableTask implements Runnable{
 		content = content.replace("#layuifield#", fieldSb.toString());
 
 		FileUtil.getInstance().createFile(
-				(this.resourcesPath + this.webFolder + "/" + pkgPath).replace(".", "/"),
-				this.filePrefix + ".jsp", content, this.encoding, false);
+				(this.resourcesPath + this.webFolder + "/" + this.modelPkg).replace(".**", "").replace(".", "/"),
+				controllerMap + ".jsp", content, this.encoding, false);
 	}
 
 	/**

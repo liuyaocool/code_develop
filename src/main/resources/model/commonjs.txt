@@ -2,7 +2,7 @@
  * 通用js 页面引用后支持基本增删改查
  * @type {string}
  */
-var url='';
+var url='',layerIndex;
 layui.use(['table', '$util', 'layer', 'form'], function(){
     var table = layui.table,
         layer = layui.layer, //弹层
@@ -10,7 +10,7 @@ layui.use(['table', '$util', 'layer', 'form'], function(){
         global = layui.$util.mappath(globalUrl);
     table.render({
         elem: '#mainTable',
-        url: global + 'getDepartmentList',
+        url: global + 'selectAll',
         height: window.innerHeight - document.getElementById("searchForm").offsetHeight - 10,
         cellMinWidth: 80 ,//全局定义常规单元格的最小宽度，layui 2.2.1 新增
         // title: '信息',
@@ -34,7 +34,7 @@ layui.use(['table', '$util', 'layer', 'form'], function(){
         switch(obj.event){
             case 'add':
                 $("#newAddForm").formClear();
-                layer.open({
+                layerIndex = layer.open({
                     type: 1,
                     skin: 'layui-layer-lan',
                     content:  $("#newAddForm"),
@@ -53,7 +53,7 @@ layui.use(['table', '$util', 'layer', 'form'], function(){
                     // form.val('newAddForm', data[0]);
                     $("#newAddForm").formLoad(data[0]);
                     url='updateById';
-                    layer.open({
+                    layerIndex = layer.open({
                         type: 1,
                         skin: 'layui-layer-lan',
                         content:  $("#newAddForm"),
@@ -78,6 +78,7 @@ layui.use(['table', '$util', 'layer', 'form'], function(){
                             layer.msg(res.msg);
                         },
                         error:function (data) {
+                            layer.close(index);
                             layer.msg("操作失败。");
                         }
                     }) ;
@@ -97,7 +98,7 @@ layui.use(['table', '$util', 'layer', 'form'], function(){
                 success: function (res) {
                     if(res.code==0){
                         //需在第一位，否则会关闭msg弹出层 此参数☞最新弹出层
-                        layer.close(layer.index);
+                        layer.close(layerIndex);
                         table.reload('mainTable');
                     }
                     layer.msg(res.msg);

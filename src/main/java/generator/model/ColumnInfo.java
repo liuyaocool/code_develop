@@ -24,14 +24,7 @@ public class ColumnInfo {
 		}
 		this.entityAttr = FileUtil.getInstance().stringFormat(columnName, false);
 
-		switch (this.jdbcType){
-			case "a": this.javaType = "";break;
-			case "z": this.javaType = "";break;
-			case "b": this.javaType = "";break;
-			case "v": this.javaType = "";break;
-			case "d": this.javaType = "";break;
-			default: this.javaType = "String";break;
-		}
+		setJavaType(jdbcType);
 	}
 
 	public void setColumnType(int columnType) {
@@ -76,9 +69,9 @@ public class ColumnInfo {
 	private String getXmlWhere(){
 		String whereStr = "\n\t\t<if test=\"@@@ != '' and @@@ != null\">\n\t\t\tand ### @#$\n\t\t</if>";
 		if (1 == this.columnType){
-			whereStr.replace("@#$", "= #{@@@}");
+			whereStr = whereStr.replace("@#$", "= #{@@@}");
 		} else {
-			whereStr.replace("@#$", "like '%'||#{@@@}||'%'");
+			whereStr = whereStr.replace("@#$", "like '%'||#{@@@}||'%'");
 		}
 		return whereStr.replace("@@@",this.entityAttr).replace("###",this.columnName);
 	}
@@ -98,9 +91,12 @@ public class ColumnInfo {
 	//返回getset方法字符串
 	public String getGetSetMethod() {
 		String aaa = "\n\tpublic void set@@@(%%% ###){ this.### = ### == null ? null : ###.trim(); }\n\n\tpublic %%% get@@@(){ return this.###; }\n";
-		aaa = aaa.replace("###", this.entityAttr);
-		aaa = aaa.replace("@@@", FileUtil.getInstance().stringFormat(columnName, true));
-		return aaa.replace("%%%", this.javaType);
+		if ("Date".equals(this.javaType))
+			aaa = aaa.replace(" == null ? null : ###.trim()", "");
+		aaa = aaa.replace("###", this.entityAttr)
+				.replace("@@@", FileUtil.getInstance().stringFormat(columnName, true))
+				.replace("%%%", this.javaType);
+		return aaa;
 	}
 
 	public String getWhereXml() {
@@ -121,5 +117,13 @@ public class ColumnInfo {
 
 	public void setWhereXml(String whereXml) {
 		this.whereXml = whereXml;
+	}
+
+	private void setJavaType(String jdbcType) {
+		if (jdbcType.contains("TIME") || jdbcType.contains("DATE")){
+			this.javaType = "Date";
+		} else {
+			this.javaType = "String";
+		}
 	}
 }
