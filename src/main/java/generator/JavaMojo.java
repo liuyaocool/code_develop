@@ -9,6 +9,8 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
+import java.io.IOException;
+
 @Mojo(
 		name = "java",
 		defaultPhase = LifecyclePhase.GENERATE_SOURCES,
@@ -65,6 +67,11 @@ public class JavaMojo extends AbstractMojo{
 			new Thread(tableTask.myClone(tables[i])).start();
 			JavaHelpMojo.taskCount++;
 //			tableTask.create(tables[i]);
+		}
+		try {
+			tableTask.createCommonJs();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 		while (JavaHelpMojo.taskCount > 0){
 			try {

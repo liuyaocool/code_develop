@@ -10,13 +10,11 @@
 </head>
 <body style="background-color: #FFF;">
 
-<div id="toolbar" style="padding: 10px">
-    <form id="searchForm" method="post" class="layui-form" lay-filter="formSearch">
-        #searchAttr#
-        <button type="button" class="layui-btn layui-btn-normal" lay-submit lay-filter="formSearch">查询</button>
-        <button type="reset" class="layui-btn layui-btn-primary">重置</button>
-    </form>
-</div>
+<form id="searchForm" style="padding: 10px" method="post" class="layui-form" lay-filter="formSearch">
+    #searchAttr#
+    <button type="button" class="layui-btn layui-btn-normal" lay-submit lay-filter="formSearch">查询</button>
+    <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+</form>
 
 <form id="newAddForm" method="post" style="padding: 20px" hidden class="layui-form" lay-filter="formDemo">
     #inputAttr#

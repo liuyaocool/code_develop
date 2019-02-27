@@ -72,14 +72,25 @@ public class FileUtil {
 		return null;
 	}
 
-	public void createFile(String filePath, String name, String content, String encoding) throws IOException {
+	/**
+	 *
+	 * @param filePath
+	 * @param name
+	 * @param content
+	 * @param encoding
+	 * @param ifCover 若已经存在是否覆盖
+	 * @throws IOException
+	 */
+	public void createFile(String filePath, String name, String content, String encoding, boolean ifCover) throws IOException {
 		File targetFile = new File(filePath);
 		if(!targetFile.exists()){
 			targetFile.mkdirs();
 		}
 		File file = new File(filePath + "/" + name);
-		for (int i = 0; file.exists(); i++) {
-			file = new File(filePath + "/" + name.replace(".",i+"."));
+		if (!ifCover){
+			for (int i = 0; file.exists(); i++) {
+				file = new File(filePath + "/" + name.replace(".",i+"."));
+			}
 		}
 
 		FileOutputStream fos = new FileOutputStream(file, false);

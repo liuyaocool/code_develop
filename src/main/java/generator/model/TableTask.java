@@ -82,6 +82,7 @@ public class TableTask implements Runnable{
 			//创建controller
 			String controlMapping = createController(tableName,entityImport,iserviceImport,
 					pkgPath.replace("**", this.controllerPkg), this.filePrefix+"Controller");
+			createJsp(controlMapping,columns,pkgPath.replace(".**", ""));
 
 			System.out.println(tableName + "创建完成");
 		} catch (IOException e){
@@ -115,8 +116,7 @@ public class TableTask implements Runnable{
 
 		FileUtil.getInstance().createFile(
 				this.javaPath + pkgPath.replace(".", "/"),
-				filePrefix + ".java",
-				sb.toString(), this.encoding);
+				filePrefix + ".java", sb.toString(), this.encoding, false);
 		return pkgPath + "." + filePrefix;
 	}
 
@@ -135,8 +135,7 @@ public class TableTask implements Runnable{
 
 		FileUtil.getInstance().createFile(
 				this.javaPath + pkgPath.replace(".", "/"),
-				fileName + ".java",
-				content, this.encoding);
+				fileName + ".java", content, this.encoding, false);
 		return pkgPath + "." + fileName;
 	}
 
@@ -152,7 +151,7 @@ public class TableTask implements Runnable{
 		content = content.replace("#filePrefix#", this.filePrefix);
 		FileUtil.getInstance().createFile(
 				this.javaPath + pkgPath.replace(".", "/"),
-				fileName + ".java", content, this.encoding);
+				fileName + ".java", content, this.encoding, false);
 		return pkgPath + "." + filePrefix;
 	}
 
@@ -192,7 +191,7 @@ public class TableTask implements Runnable{
 //		System.out.println(content);
 		FileUtil.getInstance().createFile(
 				this.resourcesPath + "mapper/" + pkgPath.replace(".", "/"),
-				fileName + ".xml", content, this.encoding);
+				fileName + ".xml", content, this.encoding, false);
 		return pkgPath + "." + filePrefix;
 	}
 
@@ -210,7 +209,7 @@ public class TableTask implements Runnable{
 				FileUtil.getInstance().stringFormat(this.primaryInfo.getColumnName(), true));
 		FileUtil.getInstance().createFile(
 				this.javaPath + pkgPath.replace(".", "/"),
-				fileName + ".java", content, this.encoding);
+				fileName + ".java", content, this.encoding, false);
 		return controllerMapping;
 	}
 
@@ -223,33 +222,35 @@ public class TableTask implements Runnable{
 		String content = FileUtil.getInstance().getInsideFile("/model/jsp.txt");
 		content = content.replace("#controllerUrl#", controllerMap);
 		StringBuilder searchSb = new StringBuilder();
-		StringBuilder inputSb = new StringBuilder("<input name='").append(this.primaryInfo.getEntityAttr()).append("' hidden>");
+		StringBuilder inputSb = new StringBuilder("<input name='").append(this.primaryInfo.getEntityAttr()).append("' hidden>\n\t");
 		StringBuilder fieldSb = new StringBuilder();
 		ColumnInfo c;
 		for (int i = 0; i < columns.size(); i++) {
 			c = columns.get(i);
 			if (1 != c.getColumnType()){
-
+				searchSb.append(c.getDlgAttr());
+				fieldSb.append(c.getLayuiField());
 			}
 		}
-		content = content.replace("#searchAttr#", searchSb.toString());
+		inputSb.append(searchSb);
+		content = content.replace("#searchAttr#", searchSb.toString().replace(" lay-verify='required'",""));
 		content = content.replace("#inputAttr#", inputSb.toString());
 		content = content.replace("#layuifield#", fieldSb.toString());
 
 		FileUtil.getInstance().createFile(
-				(this.resourcesPath + this.webFolder + pkgPath).replace(".", "/"),
-				this.filePrefix + ".jsp", content, this.encoding);
+				(this.resourcesPath + this.webFolder + "/" + pkgPath).replace(".", "/"),
+				this.filePrefix + ".jsp", content, this.encoding, false);
 	}
 
 	/**
 	 * 创建通用js
 	 */
-	private void createCommonJs() throws IOException {
+	public void createCommonJs() throws IOException {
 
-		String content = FileUtil.getInstance().getInsideFile("/model/jsp.txt");
+		String content = FileUtil.getInstance().getInsideFile("/model/commonjs.txt");
 		FileUtil.getInstance().createFile(
 				this.resourcesPath + this.webFolder.replace(".", "/"),
-				"common.js", content, this.encoding);
+				"common.js", content, this.encoding, false);
 	}
 
 	/**

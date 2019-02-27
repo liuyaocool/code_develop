@@ -16,7 +16,7 @@ public class ColumnInfo {
 
 	public ColumnInfo(String columnName, String columnDescription, String jdbcType) {
 		this.columnName = columnName;
-		this.columnDescription = columnDescription;
+		this.columnDescription = null == columnDescription ? "" : columnDescription;
 		if (jdbcType.contains("(")){
 			this.jdbcType = jdbcType.substring(0,jdbcType.indexOf("("));
 		} else {
@@ -104,8 +104,19 @@ public class ColumnInfo {
 	}
 
 	public String getWhereXml() {
-//		return this.whereXml;
+//		return this.whereXml;==============================================需要修改==============================================================================
 		return getXmlWhere();
+	}
+
+	public String getDlgAttr(){
+		String ddd = "<label class='toolLabel'/>@@@：\n\t\t<input type='text' name='###' autocomplete='off' lay-verify='required'>\n\t</label>\n\t";
+		//报错： 数据库没有关于字段的描述
+		return ddd.replace("@@@", this.columnDescription).replace("###",this.entityAttr);
+	}
+
+	public String getLayuiField(){
+		String aa = "{field:'###', title: '@@@',align:'center'},\n\t\t";
+		return aa.replace("@@@", this.columnDescription).replace("###",this.entityAttr);
 	}
 
 	public void setWhereXml(String whereXml) {
